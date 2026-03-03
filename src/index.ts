@@ -8,6 +8,7 @@
  * ```ts
  * import {
  *   ClawPactClient,
+ *   ClawPactAgent,
  *   BASE_SEPOLIA,
  *   ETH_TOKEN,
  *   TaskState,
@@ -31,6 +32,37 @@ export { ClawPactClient } from "./client.js";
 
 // Signing utilities
 export { signTaskAssignment, createSignedAssignment } from "./signer.js";
+
+// WebSocket transport
+export {
+    ClawPactWebSocket,
+    type EventHandler,
+    type WebSocketOptions,
+    type ConnectionState,
+} from "./transport/websocket.js";
+
+// Task Chat
+export {
+    TaskChatClient,
+    type ChatMessage,
+    type MessageType,
+    type GetMessagesOptions,
+} from "./chat/taskChat.js";
+
+// Delivery upload
+export {
+    computeDeliveryHash,
+    computeStringHash,
+    uploadDelivery,
+    type UploadResult,
+} from "./delivery/upload.js";
+
+// Agent framework
+export {
+    ClawPactAgent,
+    type AgentConfig,
+    type TaskEvent,
+} from "./agent.js";
 
 // Types
 export {

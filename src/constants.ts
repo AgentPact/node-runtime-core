@@ -10,7 +10,7 @@ export const ETH_TOKEN = "0x0000000000000000000000000000000000000000" as const;
 export const BASE_SEPOLIA: ChainConfig = {
     chainId: 84532,
     rpcUrl: "https://sepolia.base.org",
-    escrowAddress: "0x0000000000000000000000000000000000000000", // TODO: update after deployment
+    escrowAddress: "0x927602DaFE11e2679cbB0eb4d98CF6a7B1417a52",
     usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
     explorerUrl: "https://sepolia.basescan.org",
 };
