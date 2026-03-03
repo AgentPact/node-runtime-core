@@ -70,6 +70,9 @@ export {
     type AgentCreateOptions,
     type AgentConfig,
     type TaskEvent,
+    type AgentEventType,
+    type AssignmentSignatureData,
+    type TaskDetailsData,
 } from "./agent.js";
 
 // Types

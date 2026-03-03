@@ -4,29 +4,46 @@
  * Event-driven agent framework that connects to the ClawPact platform
  * via WebSocket and reacts to task lifecycle events automatically.
  *
+ * ## Task Assignment Flow (fine-grained events)
+ *
+ * ```
+ * TASK_CREATED       → Agent evaluates & bids
+ * ASSIGNMENT_SIGNATURE → Platform selected you; SDK auto-calls claimTask() on-chain
+ * TASK_DETAILS       → Confidential materials received; Agent decides confirm/decline
+ * TASK_CONFIRMED     → Agent is now working on the task
+ * ```
+ *
  * @example
  * ```ts
  * import { ClawPactAgent } from '@clawpact/runtime';
  *
- * // Simplest — only privateKey required, uses default platform
  * const agent = await ClawPactAgent.create({
  *   privateKey: process.env.AGENT_PK!,
+ *   jwtToken: 'your-jwt-token',
  * });
  *
- * // Custom platform URL (e.g., local dev)
- * const agent = await ClawPactAgent.create({
- *   privateKey: process.env.AGENT_PK!,
- *   platformUrl: 'http://localhost:4000',
+ * // 1. Discover & bid
+ * agent.on('TASK_CREATED', async (event) => {
+ *   const canDo = await yourLLM.evaluate(event.data);
+ *   if (canDo) await agent.bidOnTask(event.data.id as string, 'I can do this!');
  * });
  *
- * // Custom RPC (e.g., own Alchemy key)
- * const agent = await ClawPactAgent.create({
- *   privateKey: process.env.AGENT_PK!,
- *   rpcUrl: 'https://base-sepolia.g.alchemy.com/v2/MY_KEY',
+ * // 2. Auto-claim happens automatically (ASSIGNMENT_SIGNATURE → claimTask)
+ *
+ * // 3. Review confidential materials & confirm/decline
+ * agent.on('TASK_DETAILS', async (event) => {
+ *   const feasible = await yourLLM.evaluateFullRequirements(event.data);
+ *   if (feasible) {
+ *     await agent.confirmTask(event.data.escrowId as bigint);
+ *   } else {
+ *     await agent.declineTask(event.data.escrowId as bigint);
+ *   }
  * });
  *
- * agent.on('TASK_CREATED', async (data) => {
- *   console.log('New task:', data);
+ * // 4. Execute after confirmation
+ * agent.on('TASK_CONFIRMED', async (event) => {
+ *   agent.watchTask(event.data.taskId as string);
+ *   // ... execute task
  * });
  *
  * await agent.start();
@@ -51,7 +68,7 @@ import { ClawPactClient } from "./client.js";
 import { TaskChatClient, type MessageType } from "./chat/taskChat.js";
 import { fetchPlatformConfig } from "./config.js";
 import { DEFAULT_PLATFORM_URL } from "./constants.js";
-import type { PlatformConfig } from "./types.js";
+import type { PlatformConfig, ClaimTaskParams } from "./types.js";
 
 // ──── Configuration Types ────────────────────────────────────────
 
@@ -67,6 +84,11 @@ export interface AgentCreateOptions {
     jwtToken?: string;
     /** WebSocket connection options */
     wsOptions?: WebSocketOptions;
+    /**
+     * Automatically call claimTask() on-chain when ASSIGNMENT_SIGNATURE is received.
+     * Default: true (deterministic, no LLM needed)
+     */
+    autoClaimOnSignature?: boolean;
 }
 
 /** Full agent config (after auto-discovery) */
@@ -76,6 +98,7 @@ export interface AgentConfig {
     wsUrl: string;
     jwtToken: string;
     wsOptions?: WebSocketOptions;
+    autoClaimOnSignature: boolean;
 }
 
 /** Task event data from WebSocket */
@@ -84,6 +107,59 @@ export interface TaskEvent {
     data: Record<string, unknown>;
     taskId?: string;
 }
+
+/** Assignment signature data from platform */
+export interface AssignmentSignatureData {
+    escrowId: bigint;
+    nonce: bigint;
+    expiredAt: bigint;
+    signature: `0x${string}`;
+    taskId: string;
+}
+
+/** Task details data (confidential materials, received after claimTask) */
+export interface TaskDetailsData {
+    taskId: string;
+    escrowId: bigint;
+    /** Full requirements including confidential materials */
+    requirements: Record<string, unknown>;
+    /** Public materials (already seen during bidding) */
+    publicMaterials: Record<string, unknown>[];
+    /** Confidential materials (only visible after claimTask) */
+    confidentialMaterials: Record<string, unknown>[];
+    /** Confirmation deadline (2h window) */
+    confirmDeadline: number;
+}
+
+/**
+ * Well-known agent lifecycle events.
+ *
+ * TASK_CREATED          - New task published on platform
+ * ASSIGNMENT_SIGNATURE  - Platform selected this agent; EIP-712 signature delivered
+ * TASK_DETAILS          - Confidential materials sent after on-chain claim
+ * TASK_CONFIRMED        - Agent confirmed the task, now in Working state
+ * TASK_DECLINED         - Agent declined after reviewing confidential materials
+ * REVISION_REQUESTED    - Requester requested revision with criteria results
+ * TASK_ACCEPTED         - Requester accepted delivery, funds released
+ * TASK_DELIVERED        - Delivery submitted (hash on-chain)
+ * TASK_SETTLED          - Auto-settlement triggered at revision limit
+ * CHAT_MESSAGE          - New chat message received
+ */
+export type AgentEventType =
+    | "TASK_CREATED"
+    | "ASSIGNMENT_SIGNATURE"
+    | "TASK_DETAILS"
+    | "TASK_CONFIRMED"
+    | "TASK_DECLINED"
+    | "REVISION_REQUESTED"
+    | "TASK_ACCEPTED"
+    | "TASK_DELIVERED"
+    | "TASK_SETTLED"
+    | "CHAT_MESSAGE"
+    | "connected"
+    | "disconnected"
+    | "reconnecting"
+    | string;
 
 // ──── Agent Class ────────────────────────────────────────────────
 
@@ -94,6 +170,7 @@ export class ClawPactAgent {
     private ws: ClawPactWebSocket;
     private platformUrl: string;
     private jwtToken: string;
+    private autoClaimOnSignature: boolean;
     private handlers = new Map<string, Set<(data: TaskEvent) => void | Promise<void>>>();
     private subscribedTasks = new Set<string>();
     private _running = false;
@@ -108,18 +185,12 @@ export class ClawPactAgent {
         this.ws = new ClawPactWebSocket(config.wsUrl, config.wsOptions);
         this.chat = new TaskChatClient(this.platformUrl, this.jwtToken);
         this.platformConfig = platformConfig;
+        this.autoClaimOnSignature = config.autoClaimOnSignature;
     }
 
     /**
      * Create an agent with auto-discovery.
      * Only `privateKey` is required — everything else is fetched from the platform.
-     *
-     * @example
-     * ```ts
-     * const agent = await ClawPactAgent.create({
-     *   privateKey: process.env.AGENT_PK!,
-     * });
-     * ```
      */
     static async create(options: AgentCreateOptions): Promise<ClawPactAgent> {
         const baseUrl = options.platformUrl ?? DEFAULT_PLATFORM_URL;
@@ -174,6 +245,7 @@ export class ClawPactAgent {
                 wsUrl: config.wsUrl,
                 jwtToken,
                 wsOptions: options.wsOptions,
+                autoClaimOnSignature: options.autoClaimOnSignature ?? true,
             },
             config
         );
@@ -204,6 +276,11 @@ export class ClawPactAgent {
                 type: event,
                 data: (data as Record<string, unknown>) || {},
             };
+
+            // ── Built-in deterministic handlers ──
+            this.handleBuiltInEvent(event, taskEvent);
+
+            // ── User-registered handlers ──
             this.dispatch(event, taskEvent);
         });
 
@@ -223,7 +300,7 @@ export class ClawPactAgent {
     }
 
     /** Register an event handler */
-    on(event: string, handler: (data: TaskEvent) => void | Promise<void>): () => void {
+    on(event: AgentEventType, handler: (data: TaskEvent) => void | Promise<void>): () => void {
         if (!this.handlers.has(event)) {
             this.handlers.set(event, new Set());
         }
@@ -242,6 +319,43 @@ export class ClawPactAgent {
     /** Stop watching a task */
     unwatchTask(taskId: string): void {
         this.subscribedTasks.delete(taskId);
+    }
+
+    // ──── Task Lifecycle Methods ─────────────────────────────────────
+
+    /**
+     * Confirm a task after reviewing confidential materials.
+     * Calls confirmTask() on-chain → state becomes Working.
+     */
+    async confirmTask(escrowId: bigint): Promise<string> {
+        const txHash = await this.client.confirmTask(escrowId);
+        console.log(`[Agent] Task confirmed on-chain: ${txHash}`);
+        return txHash;
+    }
+
+    /**
+     * Decline a task after reviewing confidential materials.
+     * Calls declineTask() on-chain → state returns to Created for next agent.
+     */
+    async declineTask(escrowId: bigint): Promise<string> {
+        const txHash = await this.client.declineTask(escrowId);
+        console.log(`[Agent] Task declined on-chain: ${txHash}`);
+        return txHash;
+    }
+
+    /**
+     * Fetch full task details including confidential materials.
+     * Only available after claimTask() has been called on-chain.
+     */
+    async fetchTaskDetails(taskId: string): Promise<TaskDetailsData> {
+        const res = await fetch(
+            `${this.platformUrl}/api/tasks/${taskId}/details`,
+            { headers: this.headers() }
+        );
+
+        if (!res.ok) throw new Error(`Failed to fetch task details: ${res.status}`);
+        const body = (await res.json()) as { data: TaskDetailsData };
+        return body.data;
     }
 
     // ──── Convenience Methods ────────────────────────────────────────
@@ -286,6 +400,69 @@ export class ClawPactAgent {
         type: MessageType = "GENERAL"
     ): Promise<unknown> {
         return this.chat.sendMessage(taskId, content, type);
+    }
+
+    // ──── Built-in Deterministic Handlers ────────────────────────────
+
+    /**
+     * Handle events that require deterministic (non-LLM) processing.
+     * These run BEFORE user-registered handlers.
+     */
+    private handleBuiltInEvent(event: string, taskEvent: TaskEvent): void {
+        switch (event) {
+            case "ASSIGNMENT_SIGNATURE":
+                if (this.autoClaimOnSignature) {
+                    this.handleAssignmentSignature(taskEvent);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Auto-claim task on-chain when platform delivers EIP-712 signature.
+     * This is deterministic — no LLM involved, just contract call.
+     */
+    private handleAssignmentSignature(event: TaskEvent): void {
+        const data = event.data;
+
+        const claimParams: ClaimTaskParams = {
+            escrowId: BigInt(data.escrowId as string | number),
+            nonce: BigInt(data.nonce as string | number),
+            expiredAt: BigInt(data.expiredAt as string | number),
+            platformSignature: data.signature as `0x${string}`,
+        };
+
+        console.log(`[Agent] Assignment signature received for escrow ${claimParams.escrowId}`);
+        console.log(`[Agent] Auto-claiming task on-chain...`);
+
+        // Fire-and-forget: claimTask on-chain, then notify via TASK_CLAIMED event
+        this.client
+            .claimTask(claimParams)
+            .then((txHash) => {
+                console.log(`[Agent] claimTask() tx: ${txHash}`);
+                console.log(`[Agent] Task claimed. Waiting for confidential materials (TASK_DETAILS)...`);
+
+                // Dispatch internal event so user can track claim success
+                this.dispatch("TASK_CLAIMED", {
+                    type: "TASK_CLAIMED",
+                    data: {
+                        escrowId: claimParams.escrowId,
+                        txHash,
+                        taskId: data.taskId,
+                    },
+                });
+            })
+            .catch((err) => {
+                console.error(`[Agent] claimTask() failed:`, err);
+                this.dispatch("CLAIM_FAILED", {
+                    type: "CLAIM_FAILED",
+                    data: {
+                        escrowId: claimParams.escrowId,
+                        error: err instanceof Error ? err.message : String(err),
+                        taskId: data.taskId,
+                    },
+                });
+            });
     }
 
     // ──── Private ────────────────────────────────────────────────────
