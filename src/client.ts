@@ -14,7 +14,7 @@ import {
     erc20Abi,
     maxUint256,
 } from "viem";
-import { clawPactEscrowAbi } from "./abi.js";
+import { clawPactEscrowAbi, clawPactTipJarAbi } from "./abi.js";
 import { ETH_TOKEN } from "./constants.js";
 import type {
     EscrowRecord,
@@ -29,6 +29,7 @@ export class ClawPactClient {
     private readonly publicClient: PublicClient;
     private readonly walletClient?: WalletClient<Transport, Chain, Account>;
     private readonly escrowAddress: `0x${string}`;
+    private readonly tipJarAddress: `0x${string}`;
 
     constructor(
         publicClient: PublicClient,
@@ -38,6 +39,7 @@ export class ClawPactClient {
         this.publicClient = publicClient;
         this.walletClient = walletClient;
         this.escrowAddress = config.escrowAddress;
+        this.tipJarAddress = config.tipJarAddress;
     }
 
     // ========================= Read Functions =========================
@@ -137,7 +139,8 @@ export class ClawPactClient {
         if (params.token !== ETH_TOKEN && params.totalAmount > 0n) {
             await this.ensureAllowance(
                 params.token,
-                params.totalAmount
+                params.totalAmount,
+                this.escrowAddress
             );
         }
 
@@ -288,6 +291,40 @@ export class ClawPactClient {
         });
     }
 
+    /** Send a tip using the signed payload from the platform */
+    async sendTip(
+        tipper: `0x${string}`,
+        recipient: `0x${string}`,
+        amount: bigint,
+        nonce: bigint,
+        expiredAt: bigint,
+        signature: `0x${string}`,
+        usdcAddress: `0x${string}`
+    ): Promise<Hash> {
+        const wallet = this.requireWallet();
+
+        // Ensure TipJar is allowed to transfer USDC on behalf of the tipper
+        if (amount > 0n) {
+            await this.ensureAllowance(usdcAddress, amount, this.tipJarAddress);
+        }
+
+        return wallet.writeContract({
+            address: this.tipJarAddress,
+            abi: clawPactTipJarAbi,
+            functionName: "tip",
+            args: [
+                {
+                    tipper,
+                    recipient,
+                    amount,
+                    nonce,
+                    expiredAt
+                },
+                signature
+            ],
+        });
+    }
+
     // ========================= Utility =========================
 
     /** Calculate deposit rate based on maxRevisions */
@@ -333,17 +370,18 @@ export class ClawPactClient {
         ].includes(state);
     }
 
-    /** Ensure ERC20 allowance for the escrow contract */
+    /** Ensure ERC20 allowance for the target contract */
     private async ensureAllowance(
         token: `0x${string}`,
-        amount: bigint
+        amount: bigint,
+        target: `0x${string}`
     ): Promise<void> {
         const wallet = this.requireWallet();
         const currentAllowance = (await this.publicClient.readContract({
             address: token,
             abi: erc20Abi,
             functionName: "allowance",
-            args: [wallet.account.address, this.escrowAddress],
+            args: [wallet.account.address, target],
         })) as bigint;
 
         if (currentAllowance < amount) {
@@ -351,7 +389,7 @@ export class ClawPactClient {
                 address: token,
                 abi: erc20Abi,
                 functionName: "approve",
-                args: [this.escrowAddress, maxUint256],
+                args: [target, maxUint256],
             });
             await this.publicClient.waitForTransactionReceipt({ hash });
         }

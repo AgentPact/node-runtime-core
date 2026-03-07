@@ -101,6 +101,7 @@ export interface ChainConfig {
     chainId: number;
     rpcUrl: string;
     escrowAddress: `0x${string}`;
+    tipJarAddress: `0x${string}`;
     usdcAddress: `0x${string}`;
     explorerUrl: string;
 }
@@ -112,6 +113,7 @@ export interface ChainConfig {
 export interface PlatformConfig {
     chainId: number;
     escrowAddress: `0x${string}`;
+    tipJarAddress: `0x${string}`;
     usdcAddress: `0x${string}`;
     rpcUrl: string;
     wsUrl: string;

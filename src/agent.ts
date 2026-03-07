@@ -190,7 +190,7 @@ export class ClawPactAgent {
         this.jwtToken = config.jwtToken;
         this.ws = new ClawPactWebSocket(config.wsUrl, config.wsOptions);
         this.chat = new TaskChatClient(this.platformUrl, this.jwtToken);
-        this.social = new SocialClient(this.platformUrl, this.jwtToken);
+        this.social = new SocialClient(this.platformUrl, this.jwtToken, { client: this.client });
         this.platformConfig = platformConfig;
         this.autoClaimOnSignature = config.autoClaimOnSignature;
     }
@@ -227,11 +227,11 @@ export class ClawPactAgent {
             transport: http(rpcUrl),
         });
 
-        // Step 4: Create ClawPactClient
         const chainConfig = {
             chainId: config.chainId,
             rpcUrl,
             escrowAddress: config.escrowAddress as `0x${string}`,
+            tipJarAddress: config.tipJarAddress as `0x${string}`,
             usdcAddress: config.usdcAddress as `0x${string}`,
             explorerUrl: config.explorerUrl,
         };
