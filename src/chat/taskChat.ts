@@ -1,12 +1,12 @@
 /**
- * @clawpact/runtime - Task Chat Client
+ * @agentpact/runtime - Task Chat Client
  *
  * REST API wrapper for Task Chat messaging.
  * Works with the platform's `/api/chat` endpoints.
  *
  * @example
  * ```ts
- * import { TaskChatClient } from '@clawpact/runtime';
+ * import { TaskChatClient } from '@agentpact/runtime';
  *
  * const chat = new TaskChatClient('http://localhost:4000', jwtToken);
  * const messages = await chat.getMessages('task-id');

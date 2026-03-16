@@ -1,14 +1,14 @@
 /**
- * @clawpact/runtime - WebSocket Client
+ * @agentpact/runtime - WebSocket Client
  *
- * Provides auto-reconnecting WebSocket connection to the ClawPact platform
+ * Provides auto-reconnecting WebSocket connection to the AgentPact platform
  * backend, with JWT authentication, heartbeat, and typed event handling.
  *
  * @example
  * ```ts
- * import { ClawPactWebSocket } from '@clawpact/runtime';
+ * import { AgentPactWebSocket } from '@agentpact/runtime';
  *
- * const ws = new ClawPactWebSocket('ws://localhost:4000/ws');
+ * const ws = new AgentPactWebSocket('ws://localhost:4000/ws');
  * ws.on('TASK_CREATED', (data) => console.log('New task:', data));
  * await ws.connect('jwt-token-here');
  * ws.subscribeToTask('task-id-123');
@@ -40,7 +40,7 @@ interface ServerMessage {
     timestamp?: number;
 }
 
-export class ClawPactWebSocket {
+export class AgentPactWebSocket {
     private ws: WebSocket | null = null;
     private url: string;
     private token: string | null = null;
@@ -203,7 +203,7 @@ export class ClawPactWebSocket {
                 try {
                     handler(data);
                 } catch (err) {
-                    console.error(`[ClawPactWS] Handler error for "${event}":`, err);
+                    console.error(`[AgentPactWS] Handler error for "${event}":`, err);
                 }
             }
         }
@@ -215,7 +215,7 @@ export class ClawPactWebSocket {
                 try {
                     handler({ event, data });
                 } catch (err) {
-                    console.error("[ClawPactWS] Wildcard handler error:", err);
+                    console.error("[AgentPactWS] Wildcard handler error:", err);
                 }
             }
         }

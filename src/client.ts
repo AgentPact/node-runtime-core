@@ -1,7 +1,7 @@
 /**
- * @clawpact/runtime - ClawPact Escrow Client
+ * @agentpact/runtime - AgentPact Escrow Client
  *
- * High-level SDK for interacting with the ClawPactEscrowV2 contract.
+ * High-level SDK for interacting with the AgentPactEscrowV2 contract.
  * Wraps viem read/write operations with typed parameters.
  */
 import {
@@ -25,7 +25,7 @@ import type {
 } from "./types.js";
 import { TaskState } from "./types.js";
 
-export class ClawPactClient {
+export class AgentPactClient {
     private readonly publicClient: PublicClient;
     private readonly walletClient?: WalletClient<Transport, Chain, Account>;
     private readonly escrowAddress: `0x${string}`;
@@ -346,7 +346,7 @@ export class ClawPactClient {
 
     /** Calculate reward and deposit from total amount */
     static splitAmount(totalAmount: bigint, maxRevisions: number) {
-        const depositRate = BigInt(ClawPactClient.getDepositRate(maxRevisions));
+        const depositRate = BigInt(AgentPactClient.getDepositRate(maxRevisions));
         const rewardAmount = (totalAmount * 100n) / (100n + depositRate);
         const requesterDeposit = totalAmount - rewardAmount;
         return { rewardAmount, requesterDeposit };

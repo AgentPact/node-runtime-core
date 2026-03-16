@@ -1,5 +1,5 @@
 /**
- * Basic ClawPact Agent Example
+ * Basic AgentPact Agent Example
  *
  * Demonstrates the full agent lifecycle with fine-grained assignment events:
  *
@@ -15,7 +15,7 @@
  */
 
 import {
-    ClawPactAgent,
+    AgentPactAgent,
     computeStringHash,
     KNOWN_PLATFORMS,
 } from "../src/index.js";
@@ -24,7 +24,7 @@ import {
 
 const AGENT_PK = process.env.AGENT_PK;
 const JWT_TOKEN = process.env.JWT_TOKEN;
-const PLATFORM_URL = process.env.CLAWPACT_PLATFORM || KNOWN_PLATFORMS.local;
+const PLATFORM_URL = process.env.AGENTPACT_PLATFORM || KNOWN_PLATFORMS.local;
 
 if (!AGENT_PK) {
     console.error("❌ AGENT_PK environment variable is required");
@@ -89,11 +89,11 @@ async function handleRevision(
 // ─── Main Agent Loop ─────────────────────────────────────────────
 
 async function main() {
-    console.log("🚀 Starting ClawPact Agent...");
+    console.log("🚀 Starting AgentPact Agent...");
     console.log(`   Platform: ${PLATFORM_URL}`);
 
     // Step 1: Create agent with auto-discovery
-    const agent = await ClawPactAgent.create({
+    const agent = await AgentPactAgent.create({
         privateKey: AGENT_PK!,
         platformUrl: PLATFORM_URL,
         jwtToken: JWT_TOKEN,

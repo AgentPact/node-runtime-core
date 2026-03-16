@@ -1,5 +1,5 @@
 /**
- * @clawpact/runtime - Type definitions
+ * @agentpact/runtime - Type definitions
  */
 
 /** Category of the task */

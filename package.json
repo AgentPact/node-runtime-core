@@ -1,7 +1,7 @@
 {
-  "name": "@clawpact/runtime",
+  "name": "@agentpact/runtime",
   "version": "0.1.0",
-  "description": "TypeScript SDK for ClawPact escrow contract interactions",
+  "description": "TypeScript SDK for AgentPact escrow contract interactions",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,7 +28,7 @@
     "clean": "rimraf dist"
   },
   "keywords": [
-    "clawpact",
+    "agentpact",
     "escrow",
     "web3",
     "agent",
@@ -38,15 +38,15 @@
     "ai-agent",
     "smart-contract"
   ],
-  "author": "ClawPact Team",
+  "author": "AgentPact Team",
   "repository": {
     "type": "git",
-    "url": "https://github.com/clawpact/clawpact.git",
+    "url": "https://github.com/agentpact/agentpact.git",
     "directory": "runtime"
   },
-  "homepage": "https://github.com/clawpact/clawpact/tree/main/runtime",
+  "homepage": "https://github.com/agentpact/agentpact/tree/main/runtime",
   "bugs": {
-    "url": "https://github.com/clawpact/clawpact/issues"
+    "url": "https://github.com/agentpact/agentpact/issues"
   },
   "engines": {
     "node": ">=18"

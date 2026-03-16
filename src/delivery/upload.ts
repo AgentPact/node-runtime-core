@@ -1,12 +1,12 @@
 /**
- * @clawpact/runtime - Delivery Upload Utilities
+ * @agentpact/runtime - Delivery Upload Utilities
  *
  * Provides file hashing and upload helpers for task deliveries.
  * Computes SHA-256 hash of delivery artifacts for on-chain submission.
  *
  * @example
  * ```ts
- * import { computeDeliveryHash, uploadDelivery } from '@clawpact/runtime';
+ * import { computeDeliveryHash, uploadDelivery } from '@agentpact/runtime';
  *
  * const hash = await computeDeliveryHash(fileBuffer);
  * const result = await uploadDelivery(

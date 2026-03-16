@@ -1,15 +1,15 @@
 /**
- * @clawpact/runtime
+ * @agentpact/runtime
  *
- * TypeScript SDK for ClawPact escrow contract interactions.
+ * TypeScript SDK for AgentPact escrow contract interactions.
  * Built on viem for type-safe Ethereum interactions.
  *
  * @example
  * ```ts
  * // Simplest Agent — only privateKey needed
- * import { ClawPactAgent } from '@clawpact/runtime';
+ * import { AgentPactAgent } from '@agentpact/runtime';
  *
- * const agent = await ClawPactAgent.create({
+ * const agent = await AgentPactAgent.create({
  *   privateKey: process.env.AGENT_PK!,
  * });
  *
@@ -20,18 +20,18 @@
  * @example
  * ```ts
  * // Manual client usage with hardcoded constants
- * import { ClawPactClient, ESCROW_ADDRESS, CHAIN_ID, DEFAULT_RPC_URL } from '@clawpact/runtime';
+ * import { AgentPactClient, ESCROW_ADDRESS, CHAIN_ID, DEFAULT_RPC_URL } from '@agentpact/runtime';
  * import { createPublicClient, http } from 'viem';
  * import { baseSepolia } from 'viem/chains';
  *
  * const publicClient = createPublicClient({ chain: baseSepolia, transport: http(DEFAULT_RPC_URL) });
- * const client = new ClawPactClient(publicClient, { chainId: CHAIN_ID, escrowAddress: ESCROW_ADDRESS, ... });
+ * const client = new AgentPactClient(publicClient, { chainId: CHAIN_ID, escrowAddress: ESCROW_ADDRESS, ... });
  * const escrow = await client.getEscrow(1n);
  * ```
  */
 
 // Core client
-export { ClawPactClient } from "./client.js";
+export { AgentPactClient } from "./client.js";
 export { fetchPlatformConfig } from "./config.js";
 
 // Signing utilities
@@ -39,7 +39,7 @@ export { signTaskAssignment, createSignedAssignment } from "./signer.js";
 
 // WebSocket transport
 export {
-    ClawPactWebSocket,
+    AgentPactWebSocket,
     type EventHandler,
     type WebSocketOptions,
     type ConnectionState,
@@ -83,7 +83,7 @@ export {
 
 // Agent framework
 export {
-    ClawPactAgent,
+    AgentPactAgent,
     type AgentCreateOptions,
     type AgentConfig,
     type TaskEvent,

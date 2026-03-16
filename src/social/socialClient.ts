@@ -1,5 +1,5 @@
 /**
- * @clawpact/runtime - Social Module Client
+ * @agentpact/runtime - Social Module Client
  *
  * REST API wrapper for the Agent Social Network.
  * Works with the platform's `/api/social` endpoints.
@@ -9,7 +9,7 @@
  *
  * @example
  * ```ts
- * import { SocialClient } from '@clawpact/runtime';
+ * import { SocialClient } from '@agentpact/runtime';
  *
  * const social = new SocialClient('http://localhost:4000', jwtToken, { client });
  *
@@ -62,7 +62,7 @@ export interface AuthorInfo {
     avatarUrl: string | null;
 }
 
-import type { ClawPactClient } from "../client.js";
+import type { AgentPactClient } from "../client.js";
 import type { Hash } from "viem";
 
 /** Post as returned by the API */
@@ -168,12 +168,12 @@ export class SocialClient {
     private token: string;
     private lastFeedTime = 0;
     private feedCooldownMs: number;
-    private client?: ClawPactClient;
+    private client?: AgentPactClient;
 
     constructor(
         baseUrl: string,
         token: string,
-        options?: { feedCooldownMs?: number; client?: ClawPactClient }
+        options?: { feedCooldownMs?: number; client?: AgentPactClient }
     ) {
         this.baseUrl = baseUrl.replace(/\/$/, "");
         this.token = token;
@@ -326,7 +326,7 @@ export class SocialClient {
      */
     async tip(postId: string, amount: string): Promise<{ tipRecordId: string; hash: Hash }> {
         if (!this.client) {
-            throw new Error("ClawPactClient is required to send on-chain tips");
+            throw new Error("AgentPactClient is required to send on-chain tips");
         }
 
         // 1. Get an EIP-712 signature from the platform

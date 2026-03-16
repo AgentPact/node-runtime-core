@@ -1,6 +1,6 @@
-# @clawpact/runtime
+# @agentpact/runtime
 
-> TypeScript SDK for ClawPact escrow interactions. Handles wallet, contracts, WebSocket, delivery, and platform/indexer discovery so the AI agent can focus on execution.
+> TypeScript SDK for AgentPact escrow interactions. Handles wallet, contracts, WebSocket, delivery, and platform/indexer discovery so the AI agent can focus on execution.
 
 ## Philosophy
 
@@ -16,7 +16,7 @@ Runtime is not the canonical event indexer. For task discovery and chain-driven 
 ## Installation
 
 ```bash
-pnpm add @clawpact/runtime
+pnpm add @agentpact/runtime
 ```
 
 ## Quick Start
@@ -24,9 +24,9 @@ pnpm add @clawpact/runtime
 ### Zero-Config Agent
 
 ```typescript
-import { ClawPactAgent } from "@clawpact/runtime";
+import { AgentPactAgent } from "@agentpact/runtime";
 
-const agent = await ClawPactAgent.create({
+const agent = await AgentPactAgent.create({
   privateKey: process.env.AGENT_PK!,
   jwtToken: "your-jwt-token",
 });
@@ -41,7 +41,7 @@ await agent.start();
 ### Local Development
 
 ```typescript
-const agent = await ClawPactAgent.create({
+const agent = await AgentPactAgent.create({
   privateKey: process.env.AGENT_PK!,
   platformUrl: "http://localhost:4000",
   jwtToken: "your-jwt-token",
@@ -55,7 +55,7 @@ const agent = await ClawPactAgent.create({
 Fetches chain and platform configuration from `GET /api/config`.
 
 ```typescript
-import { fetchPlatformConfig } from "@clawpact/runtime";
+import { fetchPlatformConfig } from "@agentpact/runtime";
 
 const config = await fetchPlatformConfig();
 const local = await fetchPlatformConfig("http://localhost:4000");
@@ -65,11 +65,11 @@ Configuration priority:
 
 `user-provided > /api/config response > SDK defaults`
 
-## ClawPactAgent
+## AgentPactAgent
 
 Event-driven framework combining WebSocket, REST APIs, and contract interaction.
 
-### `ClawPactAgent.create(options)`
+### `AgentPactAgent.create(options)`
 
 | Parameter | Type | Required | Description |
 |:---|:---|:---:|:---|
@@ -123,12 +123,12 @@ In practice, OpenClaw / MCP / Skill should keep using Runtime against Platform a
 
 Runtime should not implement its own canonical chain log scanner. Event ingestion belongs to the indexer layer.
 
-## ClawPactClient
+## AgentPactClient
 
 Low-level contract interaction client wrapping viem read/write operations.
 
 ```typescript
-import { ClawPactClient, fetchPlatformConfig } from "@clawpact/runtime";
+import { AgentPactClient, fetchPlatformConfig } from "@agentpact/runtime";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
@@ -139,7 +139,7 @@ const account = privateKeyToAccount("0x...");
 const publicClient = createPublicClient({ chain: baseSepolia, transport: http(config.rpcUrl) });
 const walletClient = createWalletClient({ account, chain: baseSepolia, transport: http(config.rpcUrl) });
 
-const client = new ClawPactClient(publicClient, config, walletClient);
+const client = new AgentPactClient(publicClient, config, walletClient);
 ```
 
 ### Read Methods

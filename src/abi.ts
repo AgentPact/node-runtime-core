@@ -121,12 +121,12 @@ export const ESCROW_ABI = [
   {
     "inputs": [
       {
-        "internalType": "enum IClawPactEscrow.TaskState",
+        "internalType": "enum IAgentPactEscrow.TaskState",
         "name": "current",
         "type": "uint8"
       },
       {
-        "internalType": "enum IClawPactEscrow.TaskState",
+        "internalType": "enum IAgentPactEscrow.TaskState",
         "name": "expected",
         "type": "uint8"
       }
@@ -616,7 +616,7 @@ export const ESCROW_ABI = [
       },
       {
         "indexed": false,
-        "internalType": "enum IClawPactEscrow.TaskState",
+        "internalType": "enum IAgentPactEscrow.TaskState",
         "name": "previousState",
         "type": "uint8"
       },
@@ -1053,7 +1053,7 @@ export const ESCROW_ABI = [
         "type": "address"
       },
       {
-        "internalType": "enum IClawPactEscrow.TaskState",
+        "internalType": "enum IAgentPactEscrow.TaskState",
         "name": "state",
         "type": "uint8"
       },
@@ -1177,7 +1177,7 @@ export const ESCROW_ABI = [
             "type": "address"
           },
           {
-            "internalType": "enum IClawPactEscrow.TaskState",
+            "internalType": "enum IAgentPactEscrow.TaskState",
             "name": "state",
             "type": "uint8"
           },
@@ -1242,7 +1242,7 @@ export const ESCROW_ABI = [
             "type": "uint8"
           }
         ],
-        "internalType": "struct IClawPactEscrow.EscrowRecord",
+        "internalType": "struct IAgentPactEscrow.EscrowRecord",
         "name": "",
         "type": "tuple"
       }
@@ -1389,6 +1389,19 @@ export const ESCROW_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "reputationRegistry",
+    "outputs": [
+      {
+        "internalType": "contract IAgentPactReputationRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -1458,6 +1471,19 @@ export const ESCROW_ABI = [
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_treasury",
+        "type": "address"
+      }
+    ],
+    "name": "setTreasury",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "escrowId",
         "type": "uint256"
@@ -1484,6 +1510,19 @@ export const ESCROW_ABI = [
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasuryContract",
+    "outputs": [
+      {
+        "internalType": "contract IAgentPactTreasury",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -2172,6 +2211,19 @@ export const TIPJAR_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "reputationRegistry",
+    "outputs": [
+      {
+        "internalType": "contract IAgentPactReputationRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -2240,11 +2292,50 @@ export const TIPJAR_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "registry",
+        "type": "address"
+      }
+    ],
+    "name": "setReputationRegistry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "newTreasury",
         "type": "address"
       }
     ],
     "name": "setTreasury",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_treasury",
+        "type": "address"
+      }
+    ],
+    "name": "setTreasuryContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_usdc",
+        "type": "address"
+      }
+    ],
+    "name": "setUsdcToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2325,7 +2416,7 @@ export const TIPJAR_ABI = [
             "type": "uint64"
           }
         ],
-        "internalType": "struct IClawPactTipJar.TipStats",
+        "internalType": "struct IAgentPactTipJar.TipStats",
         "name": "",
         "type": "tuple"
       }
@@ -2352,6 +2443,19 @@ export const TIPJAR_ABI = [
     "outputs": [
       {
         "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasuryContract",
+    "outputs": [
+      {
+        "internalType": "contract IAgentPactTreasury",
         "name": "",
         "type": "address"
       }

@@ -1,5 +1,5 @@
 /**
- * @clawpact/runtime - Chain & contract constants
+ * @agentpact/runtime - Chain & contract constants
  *
  * SECURITY: Critical contract addresses are hardcoded here to prevent
  * man-in-the-middle attacks. Never trust contract addresses from API responses.
@@ -34,7 +34,7 @@ export const EXPLORER_URL = "https://sepolia.basescan.org" as const;
 // ─── Contract Addresses (UUPS Proxy — immutable) ─────────────────
 
 /**
- * ClawPactEscrow proxy address (Base Sepolia).
+ * AgentPactEscrow proxy address (Base Sepolia).
  * SECURITY: This is a UUPS proxy — the address never changes, only the
  * implementation behind it can be upgraded by the contract owner.
  */
@@ -55,16 +55,16 @@ export const TIPJAR_ADDRESS = "0x0000000000000000000000000000000000000000" as `0
 
 // ─── Platform Configuration ──────────────────────────────────────
 
-/** Default ClawPact platform API URL */
-export const DEFAULT_PLATFORM_URL = "https://api.clawpact.io";
+/** Default AgentPact platform API URL */
+export const DEFAULT_PLATFORM_URL = "https://api.agentpact.io";
 
 /** Default WebSocket URL (derived from platform URL) */
-export const DEFAULT_WS_URL = "wss://api.clawpact.io/ws";
+export const DEFAULT_WS_URL = "wss://api.agentpact.io/ws";
 
 /** Well-known platform environments for convenience */
 export const KNOWN_PLATFORMS = {
-    mainnet: "https://api.clawpact.io",
-    testnet: "https://testnet-api.clawpact.io",
+    mainnet: "https://api.agentpact.io",
+    testnet: "https://testnet-api.agentpact.io",
     local: "http://localhost:4000",
 } as const;
 
@@ -84,7 +84,7 @@ export const MAX_DECLINE_COUNT = 3;
 
 /** EIP-712 domain for signing */
 export const EIP712_DOMAIN = {
-    name: "ClawPact",
+    name: "AgentPact",
     version: "2",
 } as const;
 

@@ -1,7 +1,7 @@
 /**
- * @clawpact/runtime - Agent Framework
+ * @agentpact/runtime - Agent Framework
  *
- * Event-driven agent framework that connects to the ClawPact platform
+ * Event-driven agent framework that connects to the AgentPact platform
  * via WebSocket and reacts to task lifecycle events automatically.
  *
  * ## Task Assignment Flow (fine-grained events)
@@ -15,9 +15,9 @@
  *
  * @example
  * ```ts
- * import { ClawPactAgent } from '@clawpact/runtime';
+ * import { AgentPactAgent } from '@agentpact/runtime';
  *
- * const agent = await ClawPactAgent.create({
+ * const agent = await AgentPactAgent.create({
  *   privateKey: process.env.AGENT_PK!,
  *   jwtToken: 'your-jwt-token',
  * });
@@ -63,8 +63,8 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia, base } from "viem/chains";
 
-import { ClawPactWebSocket, type WebSocketOptions } from "./transport/websocket.js";
-import { ClawPactClient } from "./client.js";
+import { AgentPactWebSocket, type WebSocketOptions } from "./transport/websocket.js";
+import { AgentPactClient } from "./client.js";
 import { TaskChatClient, type MessageType } from "./chat/taskChat.js";
 import { SocialClient } from "./social/socialClient.js";
 import { KnowledgeClient } from "./knowledge/knowledgeClient.js";
@@ -89,7 +89,7 @@ import type {
 
 // ──── Configuration Types ────────────────────────────────────────
 
-/** Minimal config for ClawPactAgent.create() */
+/** Minimal config for AgentPactAgent.create() */
 export interface AgentCreateOptions {
     /** Agent's wallet private key (hex, with or without 0x prefix) */
     privateKey: string;
@@ -112,7 +112,7 @@ export interface AgentCreateOptions {
 
 /** Full agent config (after auto-discovery) */
 export interface AgentConfig {
-    client: ClawPactClient;
+    client: AgentPactClient;
     platformUrl: string;
     wsUrl: string;
     jwtToken: string;
@@ -179,13 +179,13 @@ export type AgentEventType =
 
 // ──── Agent Class ────────────────────────────────────────────────
 
-export class ClawPactAgent {
-    readonly client: ClawPactClient;
+export class AgentPactAgent {
+    readonly client: AgentPactClient;
     readonly chat: TaskChatClient;
     readonly social: SocialClient;
     readonly knowledge: KnowledgeClient;
     readonly platformConfig: PlatformConfig;
-    private ws: ClawPactWebSocket;
+    private ws: AgentPactWebSocket;
     private platformUrl: string;
     private jwtToken: string;
     private autoClaimOnSignature: boolean;
@@ -200,7 +200,7 @@ export class ClawPactAgent {
         this.client = config.client;
         this.platformUrl = config.platformUrl.replace(/\/$/, "");
         this.jwtToken = config.jwtToken;
-        this.ws = new ClawPactWebSocket(config.wsUrl, config.wsOptions);
+        this.ws = new AgentPactWebSocket(config.wsUrl, config.wsOptions);
         this.chat = new TaskChatClient(this.platformUrl, this.jwtToken);
         this.social = new SocialClient(this.platformUrl, this.jwtToken, { client: this.client });
         this.knowledge = new KnowledgeClient(this.platformUrl, this.jwtToken);
@@ -215,7 +215,7 @@ export class ClawPactAgent {
      *
      * RPC URL can be customized via `rpcUrl` option.
      */
-    static async create(options: AgentCreateOptions): Promise<ClawPactAgent> {
+    static async create(options: AgentCreateOptions): Promise<AgentPactAgent> {
         const baseUrl = options.platformUrl ?? DEFAULT_PLATFORM_URL;
         const discoveredConfig = await fetchPlatformConfig(baseUrl).catch(() => null);
 
@@ -258,7 +258,7 @@ export class ClawPactAgent {
             explorerUrl: EXPLORER_URL,
         };
 
-        const client = new ClawPactClient(
+        const client = new AgentPactClient(
             publicClient as PublicClient,
             chainConfig,
             walletClient as WalletClient<Transport, Chain, Account>
@@ -284,14 +284,14 @@ export class ClawPactAgent {
         // Step 6: Authenticate (auto SIWE login if no JWT provided)
         let jwtToken = options.jwtToken ?? "";
         if (!jwtToken) {
-            jwtToken = await ClawPactAgent.autoSiweLogin(
+            jwtToken = await AgentPactAgent.autoSiweLogin(
                 baseUrl,
                 account.address,
                 walletClient as WalletClient<Transport, Chain, Account>
             );
         }
 
-        return new ClawPactAgent(
+        return new AgentPactAgent(
             {
                 client,
                 platformUrl: baseUrl,
@@ -337,7 +337,7 @@ export class ClawPactAgent {
             `${domain} wants you to sign in with your Ethereum account:`,
             address,
             "",
-            "Sign in to ClawPact",
+            "Sign in to AgentPact",
             "",
             `URI: ${uri}`,
             `Version: 1`,
