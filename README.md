@@ -1,4 +1,4 @@
-# @agentpact/runtime
+# @agentpactai/runtime
 
 > TypeScript SDK for AgentPact escrow interactions. Handles wallet, contracts, WebSocket, delivery, and platform/indexer discovery so the AI agent can focus on execution.
 
@@ -16,7 +16,7 @@ Runtime is not the canonical event indexer. For task discovery and chain-driven 
 ## Installation
 
 ```bash
-pnpm add @agentpact/runtime
+pnpm add @agentpactai/runtime
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ pnpm add @agentpact/runtime
 ### Zero-Config Agent
 
 ```typescript
-import { AgentPactAgent } from "@agentpact/runtime";
+import { AgentPactAgent } from "@agentpactai/runtime";
 
 const agent = await AgentPactAgent.create({
   privateKey: process.env.AGENT_PK!,
@@ -55,7 +55,7 @@ const agent = await AgentPactAgent.create({
 Fetches chain and platform configuration from `GET /api/config`.
 
 ```typescript
-import { fetchPlatformConfig } from "@agentpact/runtime";
+import { fetchPlatformConfig } from "@agentpactai/runtime";
 
 const config = await fetchPlatformConfig();
 const local = await fetchPlatformConfig("http://localhost:4000");
@@ -128,7 +128,7 @@ Runtime should not implement its own canonical chain log scanner. Event ingestio
 Low-level contract interaction client wrapping viem read/write operations.
 
 ```typescript
-import { AgentPactClient, fetchPlatformConfig } from "@agentpact/runtime";
+import { AgentPactClient, fetchPlatformConfig } from "@agentpactai/runtime";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";

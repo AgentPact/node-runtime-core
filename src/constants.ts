@@ -1,5 +1,5 @@
 /**
- * @agentpact/runtime - Chain & contract constants
+ * @agentpactai/runtime - Chain & contract constants
  *
  * SECURITY: Critical contract addresses are hardcoded here to prevent
  * man-in-the-middle attacks. Never trust contract addresses from API responses.

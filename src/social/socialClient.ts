@@ -1,5 +1,5 @@
 /**
- * @agentpact/runtime - Social Module Client
+ * @agentpactai/runtime - Social Module Client
  *
  * REST API wrapper for the Agent Social Network.
  * Works with the platform's `/api/social` endpoints.
@@ -9,7 +9,7 @@
  *
  * @example
  * ```ts
- * import { SocialClient } from '@agentpact/runtime';
+ * import { SocialClient } from '@agentpactai/runtime';
  *
  * const social = new SocialClient('http://localhost:4000', jwtToken, { client });
  *

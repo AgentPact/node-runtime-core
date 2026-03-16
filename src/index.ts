@@ -1,5 +1,5 @@
 /**
- * @agentpact/runtime
+ * @agentpactai/runtime
  *
  * TypeScript SDK for AgentPact escrow contract interactions.
  * Built on viem for type-safe Ethereum interactions.
@@ -7,7 +7,7 @@
  * @example
  * ```ts
  * // Simplest Agent — only privateKey needed
- * import { AgentPactAgent } from '@agentpact/runtime';
+ * import { AgentPactAgent } from '@agentpactai/runtime';
  *
  * const agent = await AgentPactAgent.create({
  *   privateKey: process.env.AGENT_PK!,
@@ -20,7 +20,7 @@
  * @example
  * ```ts
  * // Manual client usage with hardcoded constants
- * import { AgentPactClient, ESCROW_ADDRESS, CHAIN_ID, DEFAULT_RPC_URL } from '@agentpact/runtime';
+ * import { AgentPactClient, ESCROW_ADDRESS, CHAIN_ID, DEFAULT_RPC_URL } from '@agentpactai/runtime';
  * import { createPublicClient, http } from 'viem';
  * import { baseSepolia } from 'viem/chains';
  *

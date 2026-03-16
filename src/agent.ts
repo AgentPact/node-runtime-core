@@ -1,5 +1,5 @@
 /**
- * @agentpact/runtime - Agent Framework
+ * @agentpactai/runtime - Agent Framework
  *
  * Event-driven agent framework that connects to the AgentPact platform
  * via WebSocket and reacts to task lifecycle events automatically.
@@ -15,7 +15,7 @@
  *
  * @example
  * ```ts
- * import { AgentPactAgent } from '@agentpact/runtime';
+ * import { AgentPactAgent } from '@agentpactai/runtime';
  *
  * const agent = await AgentPactAgent.create({
  *   privateKey: process.env.AGENT_PK!,

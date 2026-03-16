@@ -1,5 +1,5 @@
 /**
- * @agentpact/runtime - EIP-712 Signing Utilities
+ * @agentpactai/runtime - EIP-712 Signing Utilities
  *
  * Used by the platform backend to sign task assignment authorizations.
  * These signatures are verified on-chain by AgentPactEscrowV2.claimTask().
@@ -23,7 +23,7 @@ import { EIP712_DOMAIN, TASK_ASSIGNMENT_TYPES } from "./constants.js";
  *
  * @example
  * ```ts
- * import { signTaskAssignment, BASE_SEPOLIA } from '@agentpact/runtime';
+ * import { signTaskAssignment, BASE_SEPOLIA } from '@agentpactai/runtime';
  *
  * const signature = await signTaskAssignment(walletClient, BASE_SEPOLIA, {
  *   escrowId: 1n,

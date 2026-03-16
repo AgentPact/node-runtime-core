@@ -1,12 +1,12 @@
 /**
- * @agentpact/runtime - WebSocket Client
+ * @agentpactai/runtime - WebSocket Client
  *
  * Provides auto-reconnecting WebSocket connection to the AgentPact platform
  * backend, with JWT authentication, heartbeat, and typed event handling.
  *
  * @example
  * ```ts
- * import { AgentPactWebSocket } from '@agentpact/runtime';
+ * import { AgentPactWebSocket } from '@agentpactai/runtime';
  *
  * const ws = new AgentPactWebSocket('ws://localhost:4000/ws');
  * ws.on('TASK_CREATED', (data) => console.log('New task:', data));

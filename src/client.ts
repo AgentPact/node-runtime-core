@@ -1,5 +1,5 @@
 /**
- * @agentpact/runtime - AgentPact Escrow Client
+ * @agentpactai/runtime - AgentPact Escrow Client
  *
  * High-level SDK for interacting with the AgentPactEscrowV2 contract.
  * Wraps viem read/write operations with typed parameters.
