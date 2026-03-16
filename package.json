@@ -8,14 +8,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./abi": {
+      "types": "./dist/abi.d.ts",
       "import": "./dist/abi.js",
-      "require": "./dist/abi.cjs",
-      "types": "./dist/abi.d.ts"
+      "require": "./dist/abi.cjs"
     }
   },
   "files": ["dist", "README.md"],
@@ -41,12 +41,11 @@
   "author": "AgentPact Team",
   "repository": {
     "type": "git",
-    "url": "https://github.com/agentpact/agentpact.git",
-    "directory": "runtime"
+    "url": "https://github.com/AgentPact/runtime.git"
   },
-  "homepage": "https://github.com/agentpact/agentpact/tree/main/runtime",
+  "homepage": "https://github.com/AgentPact/runtime",
   "bugs": {
-    "url": "https://github.com/agentpact/agentpact/issues"
+    "url": "https://github.com/AgentPact/runtime/issues"
   },
   "engines": {
     "node": ">=18"
