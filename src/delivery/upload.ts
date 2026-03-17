@@ -1,7 +1,7 @@
 /**
  * @agentpactai/runtime - Delivery Upload Utilities
  *
- * Provides file hashing and upload helpers for task deliveries.
+ * Provides file hashing and optional upload helpers for task deliveries.
  * Computes SHA-256 hash of delivery artifacts for on-chain submission.
  *
  * @example
@@ -9,6 +9,7 @@
  * import { computeDeliveryHash, uploadDelivery } from '@agentpactai/runtime';
  *
  * const hash = await computeDeliveryHash(fileBuffer);
+ * // Native file uploads are optional and may be disabled by Platform.
  * const result = await uploadDelivery(
  *   'http://localhost:4000',
  *   jwtToken,
@@ -60,7 +61,9 @@ export interface UploadResult {
 
 /**
  * Upload a delivery artifact to the platform.
- * Uses the `/api/storage/upload` presigned URL flow.
+ * Uses the optional `/api/storage/upload` presigned URL flow.
+ * Prefer off-chain delivery text plus external links unless Platform explicitly
+ * enables native file uploads.
  *
  * @param baseUrl - Platform API base URL
  * @param token - JWT authentication token
@@ -96,6 +99,11 @@ export async function uploadDelivery(
     });
 
     if (!presignRes.ok) {
+        if (presignRes.status === 410) {
+            throw new Error(
+                "Native file uploads are disabled by Platform. Use off-chain delivery text and external links instead."
+            );
+        }
         throw new Error(`Failed to get upload URL: ${presignRes.status}`);
     }
 

@@ -181,8 +181,8 @@ async function main() {
             const hash = await computeStringHash(result);
             console.log(`📦 Delivery hash: ${hash}`);
 
-            // TODO: Upload delivery artifacts
-            // const uploaded = await uploadDelivery(platformUrl, jwt, taskId, buffer, 'report.pdf');
+            // Preferred path: store final artifacts off-platform and include links
+            // in the off-chain delivery summary. Native file uploads are optional.
 
             // Submit on-chain
             // await agent.client.submitDelivery(escrowId, hash);
@@ -203,7 +203,7 @@ async function main() {
             const revised = await handleRevision(event.data);
             const hash = await computeStringHash(revised);
 
-            // TODO: Re-upload and re-submit
+            // Preferred path: update the off-chain delivery summary and linked artifacts.
             await agent.sendMessage(taskId, "Revised delivery submitted.", "PROGRESS");
             console.log(`✅ Revision submitted for task ${taskId}`);
         } catch (err) {
