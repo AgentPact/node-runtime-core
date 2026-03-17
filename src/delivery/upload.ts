@@ -1,8 +1,10 @@
+import { keccak256, stringToHex, toHex } from "viem";
+
 /**
  * @agentpactai/runtime - Delivery Upload Utilities
  *
  * Provides file hashing and optional upload helpers for task deliveries.
- * Computes SHA-256 hash of delivery artifacts for on-chain submission.
+ * Computes keccak256 hashes for on-chain delivery submission.
  *
  * @example
  * ```ts
@@ -21,33 +23,25 @@
  */
 
 /**
- * Compute SHA-256 hash of delivery content.
+ * Compute keccak256 hash of delivery content.
  * Returns a bytes32 hex string suitable for on-chain submission.
  *
  * @param data - File content as Uint8Array
- * @returns `0x${string}` SHA-256 hash
+ * @returns `0x${string}` keccak256 hash
  */
 export async function computeDeliveryHash(
     data: Uint8Array
 ): Promise<`0x${string}`> {
-    // Use Web Crypto API (works in both Node 18+ and browsers)
-    const buffer = new Uint8Array(data).buffer as ArrayBuffer;
-    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-    return `0x${hashHex}` as `0x${string}`;
+    return keccak256(toHex(data));
 }
 
 /**
- * Compute SHA-256 hash from a string.
+ * Compute keccak256 hash from a string.
  */
 export async function computeStringHash(
     content: string
 ): Promise<`0x${string}`> {
-    const encoder = new TextEncoder();
-    return computeDeliveryHash(encoder.encode(content));
+    return keccak256(stringToHex(content));
 }
 
 /** Upload result from the platform API */

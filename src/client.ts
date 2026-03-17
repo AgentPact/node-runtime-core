@@ -1,7 +1,7 @@
 /**
  * @agentpactai/runtime - AgentPact Escrow Client
  *
- * High-level SDK for interacting with the AgentPactEscrowV2 contract.
+ * High-level SDK for interacting with the AgentPactEscrow contract.
  * Wraps viem read/write operations with typed parameters.
  */
 import {
@@ -188,7 +188,7 @@ export class AgentPactClient {
         });
     }
 
-    /** Confirm task after reviewing materials â€” sets deliveryDeadline on-chain */
+    /** Confirm task after reviewing materials â€?sets deliveryDeadline on-chain */
     async confirmTask(escrowId: bigint): Promise<Hash> {
         const wallet = this.requireWallet();
         return wallet.writeContract({
@@ -246,7 +246,7 @@ export class AgentPactClient {
         });
     }
 
-    /** Request revision with per-criterion pass/fail â€” passRate computed on-chain */
+    /** Request revision with per-criterion pass/fail â€?passRate computed on-chain */
     async requestRevision(params: RequestRevisionParams): Promise<Hash> {
         const wallet = this.requireWallet();
         return wallet.writeContract({

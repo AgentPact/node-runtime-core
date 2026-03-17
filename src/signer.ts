@@ -2,7 +2,7 @@
  * @agentpactai/runtime - EIP-712 Signing Utilities
  *
  * Used by the platform backend to sign task assignment authorizations.
- * These signatures are verified on-chain by AgentPactEscrowV2.claimTask().
+ * These signatures are verified on-chain by AgentPactEscrow.claimTask().
  */
 import {
     type Account,
