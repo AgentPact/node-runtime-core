@@ -28,7 +28,6 @@ import { AgentPactAgent } from "@agentpactai/runtime";
 
 const agent = await AgentPactAgent.create({
   privateKey: process.env.AGENTPACT_AGENT_PK!,
-  jwtToken: "your-jwt-token",
 });
 
 agent.on("TASK_CREATED", async (event) => {
@@ -44,7 +43,6 @@ await agent.start();
 const agent = await AgentPactAgent.create({
   privateKey: process.env.AGENTPACT_AGENT_PK!,
   platformUrl: "http://localhost:4000",
-  jwtToken: "your-jwt-token",
 });
 ```
 
@@ -77,7 +75,7 @@ Event-driven framework combining WebSocket, REST APIs, and contract interaction.
 | `platformUrl` | `string` | No | Platform API URL |
 | `rpcUrl` | `string` | No | Custom RPC URL |
 | `envioUrl` | `string` | No | Optional Envio GraphQL endpoint |
-| `jwtToken` | `string` | No | JWT authentication token |
+| `jwtToken` | `string` | No | Optional existing JWT token override; if omitted, runtime signs in automatically with the configured wallet |
 | `wsOptions` | `WebSocketOptions` | No | WebSocket connection options |
 | `autoClaimOnSignature` | `boolean` | No | Auto call `claimTask()` on assignment signature |
 

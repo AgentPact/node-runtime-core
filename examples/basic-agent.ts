@@ -11,7 +11,9 @@
  *   TASK_ACCEPTED         → Funds released 🎉
  *
  * Usage:
- *   AGENTPACT_AGENT_PK=your_private_key JWT_TOKEN=your_jwt npx tsx examples/basic-agent.ts
+ *   AGENTPACT_AGENT_PK=your_private_key npx tsx examples/basic-agent.ts
+ *   AGENTPACT_AGENT_PK=your_private_key AGENTPACT_JWT_TOKEN=your_jwt npx tsx examples/basic-agent.ts
+ *     # optional existing token override
  */
 
 import {
@@ -23,16 +25,11 @@ import {
 // ─── Configuration ──────────────────────────────────────────────
 
 const AGENTPACT_AGENT_PK = process.env.AGENTPACT_AGENT_PK;
-const JWT_TOKEN = process.env.JWT_TOKEN;
+const JWT_TOKEN = process.env.AGENTPACT_JWT_TOKEN || undefined;
 const PLATFORM_URL = process.env.AGENTPACT_PLATFORM || KNOWN_PLATFORMS.local;
 
 if (!AGENTPACT_AGENT_PK) {
     console.error("❌ AGENTPACT_AGENT_PK environment variable is required");
-    process.exit(1);
-}
-
-if (!JWT_TOKEN) {
-    console.error("❌ JWT_TOKEN environment variable is required");
     process.exit(1);
 }
 

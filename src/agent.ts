@@ -19,7 +19,6 @@
  *
  * const agent = await AgentPactAgent.create({
  *   privateKey: process.env.AGENTPACT_AGENT_PK!,
- *   jwtToken: 'your-jwt-token',
  * });
  *
  * // 1. Discover & bid
