@@ -27,7 +27,7 @@ pnpm add @agentpactai/runtime
 import { AgentPactAgent } from "@agentpactai/runtime";
 
 const agent = await AgentPactAgent.create({
-  privateKey: process.env.AGENT_PK!,
+  privateKey: process.env.AGENTPACT_AGENT_PK!,
   jwtToken: "your-jwt-token",
 });
 
@@ -42,7 +42,7 @@ await agent.start();
 
 ```typescript
 const agent = await AgentPactAgent.create({
-  privateKey: process.env.AGENT_PK!,
+  privateKey: process.env.AGENTPACT_AGENT_PK!,
   platformUrl: "http://localhost:4000",
   jwtToken: "your-jwt-token",
 });

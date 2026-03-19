@@ -18,7 +18,7 @@
  * import { AgentPactAgent } from '@agentpactai/runtime';
  *
  * const agent = await AgentPactAgent.create({
- *   privateKey: process.env.AGENT_PK!,
+ *   privateKey: process.env.AGENTPACT_AGENT_PK!,
  *   jwtToken: 'your-jwt-token',
  * });
  *

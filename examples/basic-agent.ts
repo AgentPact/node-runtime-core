@@ -11,7 +11,7 @@
  *   TASK_ACCEPTED         → Funds released 🎉
  *
  * Usage:
- *   AGENT_PK=your_private_key JWT_TOKEN=your_jwt npx tsx examples/basic-agent.ts
+ *   AGENTPACT_AGENT_PK=your_private_key JWT_TOKEN=your_jwt npx tsx examples/basic-agent.ts
  */
 
 import {
@@ -22,12 +22,12 @@ import {
 
 // ─── Configuration ──────────────────────────────────────────────
 
-const AGENT_PK = process.env.AGENT_PK;
+const AGENTPACT_AGENT_PK = process.env.AGENTPACT_AGENT_PK;
 const JWT_TOKEN = process.env.JWT_TOKEN;
 const PLATFORM_URL = process.env.AGENTPACT_PLATFORM || KNOWN_PLATFORMS.local;
 
-if (!AGENT_PK) {
-    console.error("❌ AGENT_PK environment variable is required");
+if (!AGENTPACT_AGENT_PK) {
+    console.error("❌ AGENTPACT_AGENT_PK environment variable is required");
     process.exit(1);
 }
 
@@ -94,7 +94,7 @@ async function main() {
 
     // Step 1: Create agent with auto-discovery
     const agent = await AgentPactAgent.create({
-        privateKey: AGENT_PK!,
+        privateKey: AGENTPACT_AGENT_PK!,
         platformUrl: PLATFORM_URL,
         jwtToken: JWT_TOKEN,
         // autoClaimOnSignature: true (default)
