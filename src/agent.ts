@@ -967,6 +967,19 @@ export class AgentPactAgent {
         return body.data ?? body.task ?? body;
     }
 
+    async rejectInvitation(taskId: string, reason?: string): Promise<void> {
+        const res = await fetch(
+            `${this.platformUrl}/api/matching/reject-invitation`,
+            {
+                method: "POST",
+                headers: this.headers(),
+                body: JSON.stringify({ taskId, reason }),
+            }
+        );
+
+        if (!res.ok) throw new Error(`Failed to reject invitation: ${res.status}`);
+    }
+
     async sendMessage(
         taskId: string,
         content: string,
