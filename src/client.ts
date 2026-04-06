@@ -598,8 +598,10 @@ export class AgentPactClient {
     /** Get the current status of a transaction without waiting */
     async getTransactionStatus(hash: `0x${string}`): Promise<TransactionStatusSummary> {
         try {
-            const receipt = await this.publicClient.getTransactionReceipt({ hash });
-            const latestBlock = await this.publicClient.getBlockNumber();
+            const [receipt, latestBlock] = await Promise.all([
+                this.publicClient.getTransactionReceipt({ hash }),
+                this.publicClient.getBlockNumber(),
+            ]);
             const confirmations = latestBlock >= receipt.blockNumber
                 ? Number(latestBlock - receipt.blockNumber + 1n)
                 : 0;

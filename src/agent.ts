@@ -465,9 +465,11 @@ export class AgentPactAgent {
 
     /** Get a wallet overview for the current agent wallet */
     async getWalletOverview(): Promise<AgentWalletOverview> {
-        const nativeBalanceWei = await this.getNativeBalance();
         const usdcAddress = this.platformConfig.usdcAddress;
-        const [usdcRaw, usdcDecimals, usdcSymbol] = await Promise.all([
+
+        // All 4 RPC calls fire in parallel (single round-trip)
+        const [nativeBalanceWei, usdcRaw, usdcDecimals, usdcSymbol] = await Promise.all([
+            this.getNativeBalance(),
             this.getUsdcBalance(),
             this.client.getTokenDecimals(usdcAddress),
             this.client.getTokenSymbol(usdcAddress),
@@ -550,19 +552,10 @@ export class AgentPactAgent {
     async preflightCheck(params: PreflightCheckRequest = {}): Promise<PreflightCheckResult> {
         const notes: string[] = [];
         const blockingReasons: string[] = [];
-        const chainId = await this.client.getChainId();
-        const wallet = await this.getWalletOverview();
 
-        const chainOk = chainId === this.platformConfig.chainId;
-        if (!chainOk) {
-            blockingReasons.push(
-                `Connected chainId ${chainId} does not match expected chainId ${this.platformConfig.chainId}`
-            );
-        }
-
-        let gasQuote: GasQuoteSummary | undefined;
-        if (params.action) {
-            gasQuote = await this.getGasQuote({
+        // ── Round 1: chainId + wallet + gasQuote in parallel ──
+        const gasQuotePromise = params.action
+            ? this.getGasQuote({
                 action: params.action,
                 tokenAddress: params.tokenAddress,
                 spender: params.spender,
@@ -570,9 +563,24 @@ export class AgentPactAgent {
                 amount: params.requiredAmount,
                 escrowId: params.escrowId,
                 deliveryHash: params.deliveryHash,
-            } as GasQuoteRequest & { requiredAmount?: bigint });
-        } else {
+            } as GasQuoteRequest & { requiredAmount?: bigint })
+            : Promise.resolve(undefined);
+
+        const [chainId, wallet, gasQuote] = await Promise.all([
+            this.client.getChainId(),
+            this.getWalletOverview(),
+            gasQuotePromise,
+        ]);
+
+        if (!params.action) {
             notes.push("No action-specific gas quote requested.");
+        }
+
+        const chainOk = chainId === this.platformConfig.chainId;
+        if (!chainOk) {
+            blockingReasons.push(
+                `Connected chainId ${chainId} does not match expected chainId ${this.platformConfig.chainId}`
+            );
         }
 
         const minNativeBalanceWei = params.minNativeBalanceWei ?? gasQuote?.estimatedTotalCostWei;
@@ -585,10 +593,23 @@ export class AgentPactAgent {
             );
         }
 
+        // ── Round 2: token balance + allowance in parallel ──
         let token: TokenBalanceInfo | undefined;
         let tokenBalanceOk: boolean | undefined;
+        let allowance: PreflightCheckResult["allowance"];
+
         if (params.tokenAddress) {
-            token = await this.getTokenBalanceInfo(params.tokenAddress);
+            const tokenPromise = this.getTokenBalanceInfo(params.tokenAddress);
+            const allowancePromise = params.spender
+                ? this.getTokenAllowance(params.tokenAddress, params.spender)
+                : Promise.resolve(undefined);
+
+            const [tokenInfo, allowanceRaw] = await Promise.all([
+                tokenPromise,
+                allowancePromise,
+            ]);
+
+            token = tokenInfo;
             if (params.requiredAmount !== undefined) {
                 tokenBalanceOk = token.raw >= params.requiredAmount;
                 if (!tokenBalanceOk) {
@@ -597,27 +618,24 @@ export class AgentPactAgent {
                     );
                 }
             }
-        }
 
-        let allowance: PreflightCheckResult["allowance"];
-        if (params.tokenAddress && params.spender) {
-            const allowanceRaw = await this.getTokenAllowance(params.tokenAddress, params.spender);
-            const decimals = token?.decimals ?? await this.client.getTokenDecimals(params.tokenAddress);
-            allowance = {
-                tokenAddress: params.tokenAddress,
-                spender: params.spender,
-                raw: allowanceRaw,
-                formatted: formatUnits(allowanceRaw, decimals),
-            };
+            if (params.spender && allowanceRaw !== undefined) {
+                allowance = {
+                    tokenAddress: params.tokenAddress,
+                    spender: params.spender,
+                    raw: allowanceRaw,
+                    formatted: formatUnits(allowanceRaw, token.decimals),
+                };
 
-            if (params.requiredAmount !== undefined) {
-                allowance.requiredRaw = params.requiredAmount;
-                allowance.requiredFormatted = formatUnits(params.requiredAmount, decimals);
-                allowance.sufficient = allowanceRaw >= params.requiredAmount;
-                if (!allowance.sufficient) {
-                    blockingReasons.push(
-                        `Allowance ${allowance.formatted} is below the required amount ${allowance.requiredFormatted}`
-                    );
+                if (params.requiredAmount !== undefined) {
+                    allowance.requiredRaw = params.requiredAmount;
+                    allowance.requiredFormatted = formatUnits(params.requiredAmount, token.decimals);
+                    allowance.sufficient = allowanceRaw >= params.requiredAmount;
+                    if (!allowance.sufficient) {
+                        blockingReasons.push(
+                            `Allowance ${allowance.formatted} is below the required amount ${allowance.requiredFormatted}`
+                        );
+                    }
                 }
             }
         }
