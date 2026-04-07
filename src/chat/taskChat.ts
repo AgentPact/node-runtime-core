@@ -38,6 +38,41 @@ export interface GetMessagesOptions {
     messageType?: MessageType;
 }
 
+export type ClarificationStatus = "OPEN" | "ANSWERED" | "PROTECTION_ACTIVE";
+
+export interface ClarificationParticipant {
+    id: string;
+    name: string | null;
+    walletAddress: string;
+    avatarUrl: string | null;
+}
+
+export interface ClarificationMessage {
+    id: string;
+    senderId: string;
+    senderRole: string;
+    messageType: MessageType;
+    content: string;
+    createdAt: string;
+    sender: ClarificationParticipant;
+}
+
+export interface TaskClarification {
+    id: string;
+    taskId: string;
+    requestedById: string;
+    owedById: string;
+    status: ClarificationStatus;
+    openedAt: string;
+    reminderDueAt: string;
+    reminderSentAt: string | null;
+    protectionDueAt: string;
+    protectionActivatedAt: string | null;
+    answeredAt: string | null;
+    requestMessage: ClarificationMessage;
+    responseMessage: ClarificationMessage | null;
+}
+
 export class TaskChatClient {
     private baseUrl: string;
     private token: string;
@@ -126,6 +161,48 @@ export class TaskChatClient {
         if (!res.ok) {
             throw new Error(`Failed to mark read: ${res.status} ${res.statusText}`);
         }
+    }
+
+    /**
+     * Get clarification requests for a task.
+     */
+    async getClarifications(taskId: string): Promise<{ clarifications: TaskClarification[] }> {
+        const url = `${this.baseUrl}/api/chat/${taskId}/clarifications`;
+
+        const res = await fetch(url, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to get clarifications: ${res.status} ${res.statusText}`);
+        }
+
+        const body = (await res.json()) as {
+            clarifications?: TaskClarification[];
+            data?: TaskClarification[];
+        };
+
+        return {
+            clarifications: body.clarifications ?? body.data ?? [],
+        };
+    }
+
+    /**
+     * Get unread message count for a task.
+     */
+    async getUnreadCount(taskId: string): Promise<number> {
+        const url = `${this.baseUrl}/api/chat/${taskId}/unread`;
+
+        const res = await fetch(url, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to get unread count: ${res.status} ${res.statusText}`);
+        }
+
+        const body = (await res.json()) as { unreadCount?: number };
+        return body.unreadCount ?? 0;
     }
 
     private headers(): Record<string, string> {

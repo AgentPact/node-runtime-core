@@ -55,6 +55,10 @@ export {
     type ChatMessage,
     type MessageType,
     type GetMessagesOptions,
+    type ClarificationStatus,
+    type ClarificationParticipant,
+    type ClarificationMessage,
+    type TaskClarification,
 } from "./chat/taskChat.js";
 
 // Delivery upload
@@ -90,6 +94,10 @@ export {
     type AgentEventType,
     type AssignmentSignatureData,
     type ProviderRegistrationData,
+    type ProviderProfileData,
+    type ProviderProfileUpdate,
+    type CurrentUserData,
+    type GetMyTasksOptions,
     type AgentNotification,
 } from "./agent.js";
 

@@ -66,7 +66,11 @@ import { baseSepolia, base } from "viem/chains";
 
 import { AgentPactWebSocket, type WebSocketOptions } from "./transport/websocket.js";
 import { AgentPactClient } from "./client.js";
-import { TaskChatClient, type MessageType } from "./chat/taskChat.js";
+import {
+    TaskChatClient,
+    type MessageType,
+    type TaskClarification,
+} from "./chat/taskChat.js";
 import { SocialClient } from "./social/socialClient.js";
 import { KnowledgeClient } from "./knowledge/knowledgeClient.js";
 import { fetchPlatformConfig } from "./config.js";
@@ -151,6 +155,59 @@ export interface ProviderRegistrationData {
     userId: string;
     agentType: string;
     capabilities: string[];
+}
+
+export interface ProviderProfileData extends ProviderRegistrationData {
+    headline?: string | null;
+    bio?: string | null;
+    capabilityTags?: string[];
+    preferredCategories?: string[];
+    portfolioLinks?: string[];
+    verifiedCapabilityTags?: string[];
+    primaryCategories?: string[];
+    reputationScore?: number;
+    creditScore?: number;
+    creditLevel?: number;
+    totalTasks?: number;
+    completedTasks?: number;
+    activeTasks?: number;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+    user?: {
+        id: string;
+        name?: string | null;
+        avatarUrl?: string | null;
+        walletAddress?: string;
+    };
+}
+
+export interface ProviderProfileUpdate {
+    agentType?: string;
+    capabilities?: string[];
+    headline?: string;
+    bio?: string;
+    capabilityTags?: string[];
+    preferredCategories?: string[];
+    portfolioLinks?: string[];
+}
+
+export interface CurrentUserData {
+    id: string;
+    walletAddress: string;
+    role?: string;
+    name?: string | null;
+    avatarUrl?: string | null;
+    email?: string | null;
+    createdAt?: string | Date;
+    providerProfile?: ProviderProfileData | null;
+}
+
+export interface GetMyTasksOptions {
+    limit?: number;
+    offset?: number;
+    status?: string;
+    assignment?: string;
+    sortBy?: string;
 }
 
 export interface AgentNotification {
@@ -1026,6 +1083,59 @@ export class AgentPactAgent {
 
     // ──── Convenience Methods ────────────────────────────────────────
 
+    async getCurrentUser(): Promise<CurrentUserData> {
+        const res = await fetch(`${this.platformUrl}/api/auth/me`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch current user: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { user?: CurrentUserData };
+        if (!body.user) {
+            throw new Error("Current user payload missing");
+        }
+
+        return body.user;
+    }
+
+    async getProviderProfile(): Promise<ProviderProfileData> {
+        const res = await fetch(`${this.platformUrl}/api/providers/me`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch provider profile: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { profile?: ProviderProfileData };
+        if (!body.profile) {
+            throw new Error("Provider profile payload missing");
+        }
+
+        return body.profile;
+    }
+
+    async updateProviderProfile(updates: ProviderProfileUpdate): Promise<ProviderProfileData> {
+        const res = await fetch(`${this.platformUrl}/api/providers/me`, {
+            method: "PATCH",
+            headers: this.headers(),
+            body: JSON.stringify(updates),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to update provider profile: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { profile?: ProviderProfileData };
+        if (!body.profile) {
+            throw new Error("Updated provider profile payload missing");
+        }
+
+        return body.profile;
+    }
+
     async getAvailableTasks(options: {
         limit?: number;
         offset?: number;
@@ -1056,6 +1166,28 @@ export class AgentPactAgent {
 
             return queryAvailableTasksFromEnvio(this.platformConfig, options);
         }
+    }
+
+    async getMyTasks(options: GetMyTasksOptions = {}): Promise<TaskListItem[]> {
+        const currentUser = await this.getCurrentUser();
+        const params = new URLSearchParams();
+        params.set("providerId", currentUser.id);
+        params.set("limit", String(options.limit ?? 20));
+        params.set("offset", String(options.offset ?? 0));
+        if (options.status) params.set("status", options.status);
+        if (options.assignment) params.set("assignment", options.assignment);
+        if (options.sortBy) params.set("sortBy", options.sortBy);
+
+        const res = await fetch(`${this.platformUrl}/api/tasks?${params.toString()}`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch provider tasks: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { data?: TaskListItem[]; tasks?: TaskListItem[] };
+        return body.data ?? body.tasks ?? [];
     }
 
     async bidOnTask(taskId: string, message?: string): Promise<unknown> {
@@ -1100,6 +1232,19 @@ export class AgentPactAgent {
      * Handle events that require deterministic (non-LLM) processing.
      * These run BEFORE user-registered handlers.
      */
+    async getClarifications(taskId: string): Promise<TaskClarification[]> {
+        const result = await this.chat.getClarifications(taskId);
+        return result.clarifications;
+    }
+
+    async getUnreadChatCount(taskId: string): Promise<number> {
+        return this.chat.getUnreadCount(taskId);
+    }
+
+    async markChatRead(taskId: string, lastReadMessageId: string): Promise<void> {
+        return this.chat.markRead(taskId, lastReadMessageId);
+    }
+
     private handleBuiltInEvent(event: string, taskEvent: TaskEvent): void {
         switch (event) {
             case "ASSIGNMENT_SIGNATURE":
