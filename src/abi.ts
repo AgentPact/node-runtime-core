@@ -70,6 +70,17 @@ export const ESCROW_ABI = [
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "escrowId",
+        "type": "uint256"
+      }
+    ],
+    "name": "EscrowNotFound",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "FailedCall",
     "type": "error"
@@ -1606,7 +1617,6 @@ export const ESCROW_ABI = [
     "type": "receive"
   }
 ] as const;
-
 export const TIPJAR_ABI = [
   {
     "inputs": [],
