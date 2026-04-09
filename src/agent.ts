@@ -397,6 +397,25 @@ export interface WorkerTaskSessionFinishInput {
     unwatchTask?: boolean;
 }
 
+export interface WorkerApprovalGateInput {
+    runId: string;
+    taskId: string;
+    kind: ApprovalRequestKind;
+    title: string;
+    summary?: string;
+    payload?: Record<string, unknown>;
+    dueAt?: string;
+    percent?: number;
+    currentStep?: string;
+    runSummary?: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface WorkerApprovalGateResult {
+    run: WorkerRunData;
+    approval: ApprovalRequestData;
+}
+
 export interface ApprovalRequestCreateInput {
     taskId?: string;
     workerRunId?: string;
@@ -410,6 +429,35 @@ export interface ApprovalRequestCreateInput {
 export interface ApprovalRequestResolution {
     decision: "APPROVED" | "REJECTED";
     responseNote?: string;
+}
+
+export interface WaitForApprovalResolutionInput {
+    approvalId: string;
+    taskId: string;
+    timeoutMs?: number;
+    autoWatchTask?: boolean;
+}
+
+export interface WaitForApprovalResolutionResult {
+    approval?: ApprovalRequestData;
+    timedOut: boolean;
+    matchedEvent: AgentEventType | null;
+    event?: WaitForNodeEventResult["data"];
+}
+
+export interface ResumeWorkerRunAfterApprovalInput {
+    runId: string;
+    approvalId: string;
+    taskId: string;
+    percent?: number;
+    currentStep?: string;
+    summary?: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface ResumeWorkerRunAfterApprovalResult {
+    run: WorkerRunData;
+    approval: ApprovalRequestData;
 }
 
 export interface ExpireOverdueApprovalsInput {
@@ -1958,6 +2006,33 @@ export class AgentPactAgent {
         return run;
     }
 
+    async gateWorkerRunForApproval(
+        input: WorkerApprovalGateInput
+    ): Promise<WorkerApprovalGateResult> {
+        const approval = await this.requestApproval({
+            taskId: input.taskId,
+            workerRunId: input.runId,
+            kind: input.kind,
+            title: input.title,
+            summary: input.summary,
+            payload: input.payload,
+            dueAt: input.dueAt,
+        });
+
+        const run = await this.updateWorkerRun(input.runId, {
+            status: "WAITING_APPROVAL",
+            percent: input.percent,
+            currentStep: input.currentStep ?? "Waiting for node-owner approval",
+            summary: input.runSummary ?? input.summary ?? input.title,
+            metadata: input.metadata,
+        });
+
+        return {
+            run,
+            approval,
+        };
+    }
+
     async executeWorkerRunAction(
         runId: string,
         action: WorkerRunAction,
@@ -2078,6 +2153,76 @@ export class AgentPactAgent {
         }
 
         return body.approval;
+    }
+
+    async waitForApprovalResolution(
+        input: WaitForApprovalResolutionInput
+    ): Promise<WaitForApprovalResolutionResult> {
+        const waitResult = await this.waitForNodeEvent({
+            events: ["NODE_APPROVAL_RESOLVED"],
+            taskId: input.taskId,
+            approvalId: input.approvalId,
+            timeoutMs: input.timeoutMs,
+            autoWatchTask: input.autoWatchTask,
+        });
+
+        if (waitResult.timedOut) {
+            return {
+                timedOut: true,
+                matchedEvent: waitResult.matchedEvent,
+                event: waitResult.data,
+            };
+        }
+
+        const approvals = await this.getApprovalRequests({
+            taskId: input.taskId,
+            limit: 100,
+            offset: 0,
+        });
+        const approval = approvals.find((item) => item.id === input.approvalId);
+        if (!approval) {
+            throw new Error(`Approval ${input.approvalId} was resolved but could not be reloaded`);
+        }
+
+        return {
+            approval,
+            timedOut: false,
+            matchedEvent: waitResult.matchedEvent,
+            event: waitResult.data,
+        };
+    }
+
+    async resumeWorkerRunAfterApproval(
+        input: ResumeWorkerRunAfterApprovalInput
+    ): Promise<ResumeWorkerRunAfterApprovalResult> {
+        const approvals = await this.getApprovalRequests({
+            taskId: input.taskId,
+            limit: 100,
+            offset: 0,
+        });
+        const approval = approvals.find((item) => item.id === input.approvalId);
+        if (!approval) {
+            throw new Error(`Approval ${input.approvalId} not found for task ${input.taskId}`);
+        }
+        if (approval.status === "PENDING") {
+            throw new Error(`Approval ${input.approvalId} is still pending`);
+        }
+        if (approval.status !== "APPROVED") {
+            throw new Error(`Approval ${input.approvalId} resolved with status ${approval.status} and cannot resume the worker`);
+        }
+
+        const run = await this.updateWorkerRun(input.runId, {
+            status: "RUNNING",
+            percent: input.percent,
+            currentStep: input.currentStep ?? "Owner approval resolved, execution resumed",
+            summary: input.summary ?? approval.responseNote ?? approval.summary ?? approval.title,
+            metadata: input.metadata,
+        });
+
+        return {
+            run,
+            approval,
+        };
     }
 
     async expireOverdueApprovals(
