@@ -111,6 +111,7 @@ export {
     type AgentNodeData,
     type WorkerRunCreateInput,
     type WorkerRunUpdateInput,
+    type WorkerRunHeartbeatInput,
     type WorkerRunData,
     type WorkerTaskSessionStartInput,
     type WorkerTaskSessionStartResult,

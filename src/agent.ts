@@ -295,6 +295,13 @@ export interface WorkerRunUpdateInput {
     metadata?: Record<string, unknown>;
 }
 
+export interface WorkerRunHeartbeatInput {
+    percent?: number;
+    currentStep?: string;
+    summary?: string;
+    metadata?: Record<string, unknown>;
+}
+
 export interface WorkerRunData {
     id: string;
     nodeId: string;
@@ -1712,6 +1719,25 @@ export class AgentPactAgent {
         const body = (await res.json()) as { run?: WorkerRunData };
         if (!body.run) {
             throw new Error("Updated worker run payload missing");
+        }
+
+        return body.run;
+    }
+
+    async heartbeatWorkerRun(runId: string, heartbeat: WorkerRunHeartbeatInput = {}): Promise<WorkerRunData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/worker-runs/${runId}/heartbeat`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(heartbeat),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to heartbeat worker run: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { run?: WorkerRunData };
+        if (!body.run) {
+            throw new Error("Worker run heartbeat payload missing");
         }
 
         return body.run;
