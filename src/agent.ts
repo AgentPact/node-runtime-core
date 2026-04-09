@@ -398,6 +398,11 @@ export interface AgentNotification {
  * TASK_ABANDONED        - Agent voluntarily abandoned the task
  * TASK_SUSPENDED        - Task suspended after 3 declines
  * CHAT_MESSAGE          - New chat message received
+ * CLARIFICATION_UPDATED - Clarification lifecycle changed on the task
+ * NODE_WORKER_RUN_CREATED - A worker run started under the Node
+ * NODE_WORKER_RUN_UPDATED - A worker run changed status or progress
+ * NODE_APPROVAL_REQUESTED - A worker escalated to the Node owner
+ * NODE_APPROVAL_RESOLVED - The owner resolved an approval gate
  */
 export type AgentEventType =
     | "TASK_CREATED"
@@ -411,6 +416,11 @@ export type AgentEventType =
     | "TASK_ABANDONED"
     | "TASK_SUSPENDED"
     | "CHAT_MESSAGE"
+    | "CLARIFICATION_UPDATED"
+    | "NODE_WORKER_RUN_CREATED"
+    | "NODE_WORKER_RUN_UPDATED"
+    | "NODE_APPROVAL_REQUESTED"
+    | "NODE_APPROVAL_RESOLVED"
     | "connected"
     | "disconnected"
     | "reconnecting"
@@ -659,6 +669,29 @@ export class AgentPactAgent {
         }
         this.handlers.get(event)!.add(handler);
         return () => { this.handlers.get(event)?.delete(handler); };
+    }
+
+    /** Register a handler for owner approval requests raised by worker runs. */
+    onNodeApprovalRequested(handler: (data: TaskEvent) => void | Promise<void>): () => void {
+        return this.on("NODE_APPROVAL_REQUESTED", handler);
+    }
+
+    /** Register a handler for owner approval resolutions. */
+    onNodeApprovalResolved(handler: (data: TaskEvent) => void | Promise<void>): () => void {
+        return this.on("NODE_APPROVAL_RESOLVED", handler);
+    }
+
+    /** Register a handler for worker run lifecycle updates. */
+    onWorkerRunUpdate(handler: (data: TaskEvent) => void | Promise<void>): () => void {
+        const unsubs = [
+            this.on("NODE_WORKER_RUN_CREATED", handler),
+            this.on("NODE_WORKER_RUN_UPDATED", handler),
+        ];
+        return () => {
+            for (const unsub of unsubs) {
+                unsub();
+            }
+        };
     }
 
     /** Watch a specific task for real-time updates */
