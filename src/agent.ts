@@ -191,6 +191,170 @@ export interface ProviderProfileUpdate {
     portfolioLinks?: string[];
 }
 
+export type AgentNodeStatus = "ACTIVE" | "PAUSED" | "ARCHIVED";
+export type AgentNodeAutomationMode = "MANUAL" | "ASSISTED" | "AUTO";
+export type WorkerHostKind = "OPENCLAW" | "CODEX" | "MCP" | "CUSTOM";
+export type WorkerRunStatus =
+    | "QUEUED"
+    | "STARTING"
+    | "RUNNING"
+    | "WAITING_APPROVAL"
+    | "SUCCEEDED"
+    | "FAILED"
+    | "CANCELLED";
+export type ApprovalRequestKind =
+    | "TASK_RESPONSE"
+    | "DELIVERY_SUBMISSION"
+    | "SIGNING_ACTION"
+    | "PAYMENT_ACTION"
+    | "TOOL_PERMISSION"
+    | "STRATEGY_DECISION"
+    | "CUSTOM";
+export type ApprovalRequestStatus =
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED"
+    | "EXPIRED"
+    | "CANCELLED";
+
+export interface AgentNodeRegistrationData {
+    displayName: string;
+    slug?: string;
+    description?: string;
+    automationMode?: AgentNodeAutomationMode;
+    headline?: string;
+    capabilityTags?: string[];
+    policy?: Record<string, unknown>;
+    agentType?: string;
+    capabilities?: string[];
+    preferredCategories?: string[];
+    portfolioLinks?: string[];
+}
+
+export interface AgentNodeUpdate extends Partial<AgentNodeRegistrationData> {
+    status?: AgentNodeStatus;
+}
+
+export interface AgentNodeData {
+    id: string;
+    ownerId: string;
+    displayName: string;
+    slug?: string | null;
+    description?: string | null;
+    status?: AgentNodeStatus;
+    automationMode?: AgentNodeAutomationMode;
+    headline?: string | null;
+    capabilityTags?: string[];
+    policy?: Record<string, unknown> | null;
+    lastSeenAt?: string | Date | null;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+    owner?: {
+        id: string;
+        name?: string | null;
+        avatarUrl?: string | null;
+        walletAddress?: string;
+    };
+    providerProfile?: ProviderProfileData | null;
+    stats?: {
+        activeWorkerRuns: number;
+        totalWorkerRuns: number;
+        pendingApprovals: number;
+    };
+}
+
+export interface WorkerRunCreateInput {
+    taskId?: string;
+    hostKind: WorkerHostKind;
+    workerKey: string;
+    displayName?: string;
+    model?: string;
+    status?: WorkerRunStatus;
+    percent?: number;
+    currentStep?: string;
+    summary?: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface WorkerRunUpdateInput {
+    status?: WorkerRunStatus;
+    percent?: number;
+    currentStep?: string;
+    summary?: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface WorkerRunData {
+    id: string;
+    nodeId: string;
+    taskId?: string | null;
+    requestedByUserId?: string | null;
+    hostKind: WorkerHostKind;
+    workerKey: string;
+    displayName?: string | null;
+    model?: string | null;
+    status: WorkerRunStatus;
+    percent: number;
+    currentStep?: string | null;
+    summary?: string | null;
+    metadata?: Record<string, unknown> | null;
+    startedAt?: string | Date | null;
+    completedAt?: string | Date | null;
+    lastHeartbeatAt?: string | Date | null;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+    task?: {
+        id: string;
+        title?: string | null;
+        status?: string | null;
+    } | null;
+}
+
+export interface ApprovalRequestCreateInput {
+    taskId?: string;
+    workerRunId?: string;
+    kind: ApprovalRequestKind;
+    title: string;
+    summary?: string;
+    payload?: Record<string, unknown>;
+    dueAt?: string;
+}
+
+export interface ApprovalRequestResolution {
+    decision: "APPROVED" | "REJECTED";
+    responseNote?: string;
+}
+
+export interface ApprovalRequestData {
+    id: string;
+    nodeId: string;
+    taskId?: string | null;
+    workerRunId?: string | null;
+    requestedByUserId?: string | null;
+    respondedByUserId?: string | null;
+    kind: ApprovalRequestKind;
+    status: ApprovalRequestStatus;
+    title: string;
+    summary?: string | null;
+    payload?: Record<string, unknown> | null;
+    responseNote?: string | null;
+    dueAt?: string | Date | null;
+    resolvedAt?: string | Date | null;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+    workerRun?: {
+        id: string;
+        status: WorkerRunStatus;
+        displayName?: string | null;
+        currentStep?: string | null;
+    } | null;
+    task?: {
+        id: string;
+        title?: string | null;
+        status?: string | null;
+    } | null;
+}
+
 export interface CurrentUserData {
     id: string;
     walletAddress: string;
@@ -200,6 +364,7 @@ export interface CurrentUserData {
     email?: string | null;
     createdAt?: string | Date;
     providerProfile?: ProviderProfileData | null;
+    agentNode?: AgentNodeData | null;
 }
 
 export interface GetMyTasksOptions {
@@ -1134,6 +1299,210 @@ export class AgentPactAgent {
         }
 
         return body.profile;
+    }
+
+    async registerNode(input: AgentNodeRegistrationData): Promise<AgentNodeData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(input),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to register node: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { node?: AgentNodeData };
+        if (!body.node) {
+            throw new Error("Agent Node payload missing");
+        }
+
+        return body.node;
+    }
+
+    async ensureNode(input?: Partial<AgentNodeRegistrationData>): Promise<AgentNodeData> {
+        const me = await this.getCurrentUser();
+        if (me.agentNode) {
+            return me.agentNode;
+        }
+
+        const fallbackName = `Node ${this.walletAddress.slice(0, 6)}`;
+        return this.registerNode({
+            displayName: input?.displayName ?? fallbackName,
+            slug: input?.slug,
+            description: input?.description,
+            automationMode: input?.automationMode,
+            headline: input?.headline,
+            capabilityTags: input?.capabilityTags,
+            policy: input?.policy,
+            agentType: input?.agentType,
+            capabilities: input?.capabilities,
+            preferredCategories: input?.preferredCategories,
+            portfolioLinks: input?.portfolioLinks,
+        });
+    }
+
+    async getMyNode(): Promise<AgentNodeData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch Agent Node: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { node?: AgentNodeData };
+        if (!body.node) {
+            throw new Error("Agent Node payload missing");
+        }
+
+        return body.node;
+    }
+
+    async updateMyNode(updates: AgentNodeUpdate): Promise<AgentNodeData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me`, {
+            method: "PATCH",
+            headers: this.headers(),
+            body: JSON.stringify(updates),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to update Agent Node: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { node?: AgentNodeData };
+        if (!body.node) {
+            throw new Error("Updated Agent Node payload missing");
+        }
+
+        return body.node;
+    }
+
+    async getNodeWorkerRuns(options: {
+        status?: WorkerRunStatus;
+        taskId?: string;
+        limit?: number;
+        offset?: number;
+    } = {}): Promise<WorkerRunData[]> {
+        const params = new URLSearchParams();
+        if (options.status) params.set("status", options.status);
+        if (options.taskId) params.set("taskId", options.taskId);
+        params.set("limit", String(options.limit ?? 20));
+        params.set("offset", String(options.offset ?? 0));
+
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/worker-runs?${params.toString()}`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch worker runs: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { runs?: WorkerRunData[] };
+        return body.runs ?? [];
+    }
+
+    async createWorkerRun(input: WorkerRunCreateInput): Promise<WorkerRunData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/worker-runs`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(input),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to create worker run: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { run?: WorkerRunData };
+        if (!body.run) {
+            throw new Error("Worker run payload missing");
+        }
+
+        return body.run;
+    }
+
+    async updateWorkerRun(runId: string, updates: WorkerRunUpdateInput): Promise<WorkerRunData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/worker-runs/${runId}`, {
+            method: "PATCH",
+            headers: this.headers(),
+            body: JSON.stringify(updates),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to update worker run: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { run?: WorkerRunData };
+        if (!body.run) {
+            throw new Error("Updated worker run payload missing");
+        }
+
+        return body.run;
+    }
+
+    async getApprovalRequests(options: {
+        status?: ApprovalRequestStatus;
+        taskId?: string;
+        limit?: number;
+        offset?: number;
+    } = {}): Promise<ApprovalRequestData[]> {
+        const params = new URLSearchParams();
+        if (options.status) params.set("status", options.status);
+        if (options.taskId) params.set("taskId", options.taskId);
+        params.set("limit", String(options.limit ?? 20));
+        params.set("offset", String(options.offset ?? 0));
+
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/approvals?${params.toString()}`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch approval requests: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { approvals?: ApprovalRequestData[] };
+        return body.approvals ?? [];
+    }
+
+    async requestApproval(input: ApprovalRequestCreateInput): Promise<ApprovalRequestData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/approvals`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(input),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to create approval request: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { approval?: ApprovalRequestData };
+        if (!body.approval) {
+            throw new Error("Approval request payload missing");
+        }
+
+        return body.approval;
+    }
+
+    async resolveApprovalRequest(
+        approvalId: string,
+        resolution: ApprovalRequestResolution
+    ): Promise<ApprovalRequestData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/approvals/${approvalId}/resolve`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(resolution),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to resolve approval request: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { approval?: ApprovalRequestData };
+        if (!body.approval) {
+            throw new Error("Resolved approval payload missing");
+        }
+
+        return body.approval;
     }
 
     async getAvailableTasks(options: {
