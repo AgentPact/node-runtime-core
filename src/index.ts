@@ -151,6 +151,9 @@ export {
     type TaskParticipantSummary,
     type TaskAttachmentSummary,
     type TaskNodeSummary,
+    type TaskAssignmentSignatureSummary,
+    type TaskLatestDeliverySummary,
+    type TaskWorkflowSummary,
     type TaskListItem,
     type TaskDetailsData,
 } from "./types.js";

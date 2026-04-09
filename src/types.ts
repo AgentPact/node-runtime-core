@@ -314,6 +314,44 @@ export interface TaskNodeSummary {
     status?: string | null;
 }
 
+export interface TaskAssignmentSignatureSummary {
+    providerId: string;
+    escrowId: string;
+    nonce: string;
+    expiredAt: string;
+    signature: string;
+    updatedAt: string;
+}
+
+export interface TaskLatestDeliverySummary {
+    id: string;
+    revision?: number | null;
+    createdAt: string;
+    txHash?: string | null;
+    chainConfirmed?: boolean | null;
+}
+
+export interface TaskWorkflowSummary {
+    assignmentStage: "OPEN" | "SELECTED" | "READY_TO_CLAIM" | "CLAIMED" | "CLOSED";
+    deliveryStage:
+        | "NOT_READY"
+        | "AWAITING_DELIVERY"
+        | "UNDER_REVIEW"
+        | "REVISION_ACTIVE"
+        | "ACCEPTED"
+        | "SETTLED"
+        | "TIMED_OUT"
+        | "CANCELLED";
+    selectedProviderId?: string | null;
+    selectedNodeId?: string | null;
+    canSelectedNodeClaim: boolean;
+    canRequesterReviewDelivery: boolean;
+    canRequesterAcceptDelivery: boolean;
+    canRequesterRequestRevision: boolean;
+    assignmentSignature?: TaskAssignmentSignatureSummary | null;
+    latestDelivery?: TaskLatestDeliverySummary | null;
+}
+
 export interface TaskListItem {
     id: string;
     escrowId?: string | null;
@@ -336,6 +374,7 @@ export interface TaskListItem {
     requester?: TaskParticipantSummary;
     provider?: TaskParticipantSummary | null;
     node?: TaskNodeSummary | null;
+    workflow?: TaskWorkflowSummary;
     attachments?: TaskAttachmentSummary[];
     chainProjection?: TaskChainProjection | null;
     chainProjectionSource?: "platform" | "envio";
@@ -364,6 +403,7 @@ export interface TaskDetailsData {
     requester?: TaskParticipantSummary | null;
     provider?: TaskParticipantSummary | null;
     node?: TaskNodeSummary | null;
+    workflow?: TaskWorkflowSummary;
     access?: {
         assignmentRole: "requester" | "selected_provider" | "claimed_provider" | "public_viewer";
         canViewConfidential: boolean;
