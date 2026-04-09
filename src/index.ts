@@ -113,6 +113,8 @@ export {
     type WorkerRunUpdateInput,
     type WorkerRunHeartbeatInput,
     type WorkerRunData,
+    type ResolveStaleWorkerRunsInput,
+    type ResolveStaleWorkerRunsResult,
     type WorkerTaskSessionStartInput,
     type WorkerTaskSessionStartResult,
     type WorkerTaskExecutionBrief,

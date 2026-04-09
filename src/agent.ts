@@ -302,6 +302,19 @@ export interface WorkerRunHeartbeatInput {
     metadata?: Record<string, unknown>;
 }
 
+export interface ResolveStaleWorkerRunsInput {
+    action: Exclude<WorkerRunAction, "RETRY">;
+    taskId?: string;
+    limit?: number;
+    note?: string;
+}
+
+export interface ResolveStaleWorkerRunsResult {
+    action: Exclude<WorkerRunAction, "RETRY">;
+    resolvedCount: number;
+    runs: WorkerRunData[];
+}
+
 export interface WorkerRunData {
     id: string;
     nodeId: string;
@@ -1806,6 +1819,32 @@ export class AgentPactAgent {
             action: body.action,
             run: body.run,
             replacementRun: body.replacementRun ?? null,
+        };
+    }
+
+    async resolveStaleWorkerRuns(
+        input: ResolveStaleWorkerRunsInput
+    ): Promise<ResolveStaleWorkerRunsResult> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/worker-runs/resolve-stale`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(input),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to resolve stale worker runs: ${res.status}`);
+        }
+
+        const body = (await res.json()) as {
+            action?: Exclude<WorkerRunAction, "RETRY">;
+            resolvedCount?: number;
+            runs?: WorkerRunData[];
+        };
+
+        return {
+            action: body.action ?? input.action,
+            resolvedCount: body.resolvedCount ?? 0,
+            runs: body.runs ?? [],
         };
     }
 
