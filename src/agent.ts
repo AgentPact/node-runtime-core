@@ -384,6 +384,49 @@ export interface AgentNotification {
     createdAt: string;
 }
 
+export interface NodeOpsIssue<T = unknown> {
+    id: string;
+    level: "info" | "warning" | "critical";
+    reason: string;
+    minutesSinceHeartbeat?: number | null;
+    minutesPending?: number | null;
+    minutesSinceUpdate?: number | null;
+    overdue?: boolean;
+    run?: WorkerRunData;
+    approval?: ApprovalRequestData;
+    task?: T;
+}
+
+export interface NodeOpsOverviewData {
+    node: {
+        id: string;
+        displayName: string;
+        status?: AgentNodeStatus | string | null;
+        automationMode?: AgentNodeAutomationMode | string | null;
+    };
+    thresholds: {
+        staleWorkerHeartbeatMinutes: number;
+        stuckApprovalMinutes: number;
+    };
+    summary: {
+        staleWorkerRuns: number;
+        blockedApprovals: number;
+        pendingApprovals: number;
+        attentionTasks: number;
+        criticalIssues: number;
+    };
+    staleWorkerRuns: NodeOpsIssue[];
+    blockedApprovals: NodeOpsIssue[];
+    tasksNeedingAttention: NodeOpsIssue<{
+        id: string;
+        title: string;
+        status: string;
+        createdAt?: string;
+        updatedAt?: string;
+        rewardAmount?: string;
+    }>[];
+}
+
 /**
  * Well-known agent lifecycle events.
  *
@@ -1536,6 +1579,23 @@ export class AgentPactAgent {
         }
 
         return body.approval;
+    }
+
+    async getNodeOpsOverview(): Promise<NodeOpsOverviewData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/ops-overview`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch node ops overview: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { overview?: NodeOpsOverviewData };
+        if (!body.overview) {
+            throw new Error("Node ops overview payload missing");
+        }
+
+        return body.overview;
     }
 
     async getAvailableTasks(options: {

@@ -111,6 +111,8 @@ export {
     type ApprovalRequestCreateInput,
     type ApprovalRequestResolution,
     type ApprovalRequestData,
+    type NodeOpsIssue,
+    type NodeOpsOverviewData,
     type CurrentUserData,
     type GetMyTasksOptions,
     type AgentNotification,
