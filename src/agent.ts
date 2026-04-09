@@ -391,6 +391,17 @@ export interface ApprovalRequestResolution {
     responseNote?: string;
 }
 
+export interface ExpireOverdueApprovalsInput {
+    taskId?: string;
+    limit?: number;
+    note?: string;
+}
+
+export interface ExpireOverdueApprovalsResult {
+    expiredCount: number;
+    approvals: ApprovalRequestData[];
+}
+
 export interface ApprovalRequestData {
     id: string;
     nodeId: string;
@@ -1861,6 +1872,30 @@ export class AgentPactAgent {
         }
 
         return body.approval;
+    }
+
+    async expireOverdueApprovals(
+        input: ExpireOverdueApprovalsInput = {}
+    ): Promise<ExpireOverdueApprovalsResult> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/approvals/expire-overdue`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(input),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to expire overdue approvals: ${res.status}`);
+        }
+
+        const body = (await res.json()) as {
+            expiredCount?: number;
+            approvals?: ApprovalRequestData[];
+        };
+
+        return {
+            expiredCount: body.expiredCount ?? 0,
+            approvals: body.approvals ?? [],
+        };
     }
 
     async getNodeOpsOverview(): Promise<NodeOpsOverviewData> {
