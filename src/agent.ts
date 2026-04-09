@@ -235,6 +235,16 @@ export interface AgentNodeUpdate extends Partial<AgentNodeRegistrationData> {
     status?: AgentNodeStatus;
 }
 
+export type NodeAction = "PAUSE_NODE" | "RESUME_NODE" | "SET_AUTOMATION_MODE";
+export type WorkerRunAction = "CANCEL" | "MARK_FAILED" | "RETRY";
+export type TaskAction = "NUDGE_REQUESTER" | "MARK_MANUAL_REVIEW" | "ADD_NOTE";
+
+export interface NodeActionInput {
+    action: NodeAction;
+    automationMode?: AgentNodeAutomationMode;
+    note?: string;
+}
+
 export interface AgentNodeData {
     id: string;
     ownerId: string;
@@ -427,6 +437,23 @@ export interface NodeOpsOverviewData {
     }>[];
 }
 
+export interface WorkerRunActionResult {
+    action: WorkerRunAction;
+    run: WorkerRunData;
+    replacementRun?: WorkerRunData | null;
+}
+
+export interface TaskActionResult {
+    action: TaskAction;
+    note?: string;
+    task: {
+        id: string;
+        title: string;
+        status: string;
+        requesterId?: string;
+    };
+}
+
 /**
  * Well-known agent lifecycle events.
  *
@@ -446,6 +473,8 @@ export interface NodeOpsOverviewData {
  * NODE_WORKER_RUN_UPDATED - A worker run changed status or progress
  * NODE_APPROVAL_REQUESTED - A worker escalated to the Node owner
  * NODE_APPROVAL_RESOLVED - The owner resolved an approval gate
+ * NODE_UPDATED           - Node profile or operating mode changed
+ * NODE_INTERVENTION_EXECUTED - An owner intervention action was applied
  */
 export type AgentEventType =
     | "TASK_CREATED"
@@ -464,6 +493,8 @@ export type AgentEventType =
     | "NODE_WORKER_RUN_UPDATED"
     | "NODE_APPROVAL_REQUESTED"
     | "NODE_APPROVAL_RESOLVED"
+    | "NODE_UPDATED"
+    | "NODE_INTERVENTION_EXECUTED"
     | "connected"
     | "disconnected"
     | "reconnecting"
@@ -735,6 +766,16 @@ export class AgentPactAgent {
                 unsub();
             }
         };
+    }
+
+    /** Register a handler for Node profile or operating mode changes. */
+    onNodeUpdated(handler: (data: TaskEvent) => void | Promise<void>): () => void {
+        return this.on("NODE_UPDATED", handler);
+    }
+
+    /** Register a handler for owner intervention actions. */
+    onNodeIntervention(handler: (data: TaskEvent) => void | Promise<void>): () => void {
+        return this.on("NODE_INTERVENTION_EXECUTED", handler);
     }
 
     /** Watch a specific task for real-time updates */
@@ -1454,6 +1495,25 @@ export class AgentPactAgent {
         return body.node;
     }
 
+    async executeNodeAction(input: NodeActionInput): Promise<AgentNodeData> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/actions`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify(input),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to execute node action: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { node?: AgentNodeData };
+        if (!body.node) {
+            throw new Error("Node action payload missing");
+        }
+
+        return body.node;
+    }
+
     async getNodeWorkerRuns(options: {
         status?: WorkerRunStatus;
         taskId?: string;
@@ -1514,6 +1574,37 @@ export class AgentPactAgent {
         }
 
         return body.run;
+    }
+
+    async executeWorkerRunAction(
+        runId: string,
+        action: WorkerRunAction,
+        note?: string
+    ): Promise<WorkerRunActionResult> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/worker-runs/${runId}/actions`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify({ action, note }),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to execute worker run action: ${res.status}`);
+        }
+
+        const body = (await res.json()) as {
+            action?: WorkerRunAction;
+            run?: WorkerRunData;
+            replacementRun?: WorkerRunData | null;
+        };
+        if (!body.action || !body.run) {
+            throw new Error("Worker run action payload missing");
+        }
+
+        return {
+            action: body.action,
+            run: body.run,
+            replacementRun: body.replacementRun ?? null,
+        };
     }
 
     async getApprovalRequests(options: {
@@ -1596,6 +1687,33 @@ export class AgentPactAgent {
         }
 
         return body.overview;
+    }
+
+    async executeTaskAction(taskId: string, action: TaskAction, note?: string): Promise<TaskActionResult> {
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/tasks/${taskId}/actions`, {
+            method: "POST",
+            headers: this.headers(),
+            body: JSON.stringify({ action, note }),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to execute task action: ${res.status}`);
+        }
+
+        const body = (await res.json()) as {
+            action?: TaskAction;
+            note?: string;
+            task?: TaskActionResult["task"];
+        };
+        if (!body.action || !body.task) {
+            throw new Error("Task action payload missing");
+        }
+
+        return {
+            action: body.action,
+            note: body.note,
+            task: body.task,
+        };
     }
 
     async getAvailableTasks(options: {
