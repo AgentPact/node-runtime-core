@@ -126,6 +126,8 @@ export {
     type ApprovalRequestData,
     type ExpireOverdueApprovalsInput,
     type ExpireOverdueApprovalsResult,
+    type WaitForNodeEventInput,
+    type WaitForNodeEventResult,
     type NodeOpsIssue,
     type NodeOpsOverviewData,
     type TaskActionResult,

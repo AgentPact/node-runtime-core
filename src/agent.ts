@@ -415,6 +415,24 @@ export interface ExpireOverdueApprovalsResult {
     approvals: ApprovalRequestData[];
 }
 
+export interface WaitForNodeEventInput {
+    events: AgentEventType[];
+    taskId?: string;
+    runId?: string;
+    approvalId?: string;
+    timeoutMs?: number;
+    autoWatchTask?: boolean;
+}
+
+export interface WaitForNodeEventResult {
+    matchedEvent: AgentEventType | null;
+    timedOut: boolean;
+    taskId?: string;
+    runId?: string;
+    approvalId?: string;
+    data?: Record<string, unknown>;
+}
+
 export interface ApprovalRequestData {
     id: string;
     nodeId: string;
@@ -856,6 +874,85 @@ export class AgentPactAgent {
     /** Register a handler for owner intervention actions. */
     onNodeIntervention(handler: (data: TaskEvent) => void | Promise<void>): () => void {
         return this.on("NODE_INTERVENTION_EXECUTED", handler);
+    }
+
+    async waitForNodeEvent(input: WaitForNodeEventInput): Promise<WaitForNodeEventResult> {
+        const events = Array.from(new Set(input.events));
+        if (events.length === 0) {
+            throw new Error("At least one event must be provided");
+        }
+
+        if (input.taskId && input.autoWatchTask !== false) {
+            this.watchTask(input.taskId);
+        }
+
+        return await new Promise<WaitForNodeEventResult>((resolve) => {
+            const timeoutMs = input.timeoutMs ?? 60000;
+            let settled = false;
+            const unsubs: Array<() => void> = [];
+
+            const finish = (result: WaitForNodeEventResult) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                for (const unsub of unsubs) {
+                    unsub();
+                }
+                resolve(result);
+            };
+
+            const matchesFilter = (event: TaskEvent) => {
+                const payload = event.data as Record<string, unknown>;
+                if (input.taskId) {
+                    const eventTaskId = typeof event.taskId === "string"
+                        ? event.taskId
+                        : typeof payload.taskId === "string"
+                            ? payload.taskId
+                            : undefined;
+                    if (eventTaskId !== input.taskId) return false;
+                }
+                if (input.runId) {
+                    const eventRunId = typeof payload.runId === "string"
+                        ? payload.runId
+                        : typeof payload.workerRunId === "string"
+                            ? payload.workerRunId
+                            : undefined;
+                    if (eventRunId !== input.runId) return false;
+                }
+                if (input.approvalId) {
+                    const eventApprovalId = typeof payload.approvalId === "string" ? payload.approvalId : undefined;
+                    if (eventApprovalId !== input.approvalId) return false;
+                }
+                return true;
+            };
+
+            const timer = setTimeout(() => {
+                finish({
+                    matchedEvent: null,
+                    timedOut: true,
+                    taskId: input.taskId,
+                    runId: input.runId,
+                    approvalId: input.approvalId,
+                });
+            }, timeoutMs);
+
+            for (const eventName of events) {
+                const unsub = this.on(eventName, (event) => {
+                    if (!matchesFilter(event)) {
+                        return;
+                    }
+                    finish({
+                        matchedEvent: eventName,
+                        timedOut: false,
+                        taskId: input.taskId ?? event.taskId,
+                        runId: input.runId,
+                        approvalId: input.approvalId,
+                        data: event.data,
+                    });
+                });
+                unsubs.push(unsub);
+            }
+        });
     }
 
     /** Watch a specific task for real-time updates */
