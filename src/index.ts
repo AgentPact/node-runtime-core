@@ -146,6 +146,7 @@ export {
     type CurrentUserData,
     type GetMyTasksOptions,
     type AgentNotification,
+    type NodeActionLogEntry,
 } from "./agent.js";
 
 // Types

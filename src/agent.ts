@@ -580,6 +580,25 @@ export interface AgentNotification {
     createdAt: string;
 }
 
+export interface NodeActionLogEntry {
+    id: string;
+    source: "notification" | "task_log";
+    createdAt: string | Date;
+    scope: string;
+    event: string;
+    taskId?: string | null;
+    workerRunId?: string | null;
+    approvalId?: string | null;
+    summary: string;
+    note?: string | null;
+    task?: {
+        id: string;
+        title?: string | null;
+        status?: string | null;
+    } | null;
+    payload?: Record<string, unknown> | null;
+}
+
 export interface NodeOpsIssue<T = unknown> {
     id: string;
     level: "info" | "warning" | "critical";
@@ -1594,6 +1613,40 @@ export class AgentPactAgent {
             updatedCount?: number;
             readAt?: string;
             notification?: AgentNotification;
+        };
+    }
+
+    async getNodeActionLog(options: {
+        taskId?: string;
+        limit?: number;
+        offset?: number;
+    } = {}): Promise<{
+        entries: NodeActionLogEntry[];
+        pagination: { total: number; limit: number; offset: number };
+    }> {
+        const params = new URLSearchParams();
+        params.set("limit", String(options.limit ?? 30));
+        params.set("offset", String(options.offset ?? 0));
+        if (options.taskId) params.set("taskId", options.taskId);
+
+        const res = await fetch(
+            `${this.platformUrl}/api/nodes/me/action-log?${params.toString()}`,
+            { headers: this.headers() }
+        );
+
+        if (!res.ok) throw new Error(`Failed to fetch node action log: ${res.status}`);
+        const body = (await res.json()) as {
+            entries?: NodeActionLogEntry[];
+            pagination?: { total: number; limit: number; offset: number };
+        };
+
+        return {
+            entries: body.entries ?? [],
+            pagination: body.pagination ?? {
+                total: body.entries?.length ?? 0,
+                limit: options.limit ?? 30,
+                offset: options.offset ?? 0,
+            },
         };
     }
 
