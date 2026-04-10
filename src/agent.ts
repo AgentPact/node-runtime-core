@@ -606,6 +606,10 @@ export interface ApprovalRequestData {
     payload?: Record<string, unknown> | null;
     responseNote?: string | null;
     dueAt?: string | Date | null;
+    effectiveDueAt?: string | Date | null;
+    timeoutWindowMinutes?: number;
+    timeoutSource?: "explicit" | "policy_default";
+    isOverdue?: boolean;
     resolvedAt?: string | Date | null;
     createdAt?: string | Date;
     updatedAt?: string | Date;
@@ -653,7 +657,7 @@ export interface AgentNotification {
 
 export interface NodeActionLogEntry {
     id: string;
-    source: "notification" | "task_log";
+    source: "record";
     createdAt: string | Date;
     scope: string;
     event: string;
@@ -2409,7 +2413,7 @@ export class AgentPactAgent {
         input: WaitForApprovalResolutionInput
     ): Promise<WaitForApprovalResolutionResult> {
         const waitResult = await this.waitForNodeEvent({
-            events: ["NODE_APPROVAL_RESOLVED"],
+            events: ["NODE_APPROVAL_RESOLVED", "NODE_APPROVAL_EXPIRED"],
             taskId: input.taskId,
             approvalId: input.approvalId,
             timeoutMs: input.timeoutMs,
@@ -2686,7 +2690,10 @@ export class AgentPactAgent {
             }
         );
 
-        if (!res.ok) throw new Error(`Failed to bid: ${res.status}`);
+        if (!res.ok) {
+            const detail = await res.text().catch(() => "");
+            throw new Error(`Failed to bid: ${res.status}${detail ? ` ${detail}` : ""}`);
+        }
         const body = (await res.json()) as { data?: unknown; task?: unknown };
         return body.data ?? body.task ?? body;
     }
