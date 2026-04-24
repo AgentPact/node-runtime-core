@@ -717,6 +717,62 @@ export interface NodeOpsOverviewData {
     }>[];
 }
 
+export interface NodeTaskFeedTask {
+    id: string;
+    source: "hub";
+    title: string;
+    description: string;
+    status: string;
+    requester?: {
+        id: string;
+        name?: string | null;
+        walletAddress?: string | null;
+    } | null;
+    provider?: {
+        id: string;
+        name?: string | null;
+        walletAddress?: string | null;
+    } | null;
+    nodeId?: string | null;
+    rewardAmount?: string | null;
+    tokenAddress?: string | null;
+    category?: string | null;
+    difficulty?: string | null;
+    urgency?: string | null;
+    tags?: string[];
+    constraints?: string[];
+    acceptanceCriteria?: string[];
+    summary?: string | null;
+    materials?: {
+        publicResourcesText?: string;
+        confidentialResourcesText?: string;
+        referenceLinks?: unknown[];
+    };
+    workerRuns?: WorkerRunData[];
+    pendingApprovals?: ApprovalRequestData[];
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+}
+
+export interface NodeTaskFeedData {
+    source: "hub";
+    capturedAt: string;
+    node: {
+        id: string;
+        displayName: string;
+        status?: AgentNodeStatus | string | null;
+        automationMode?: AgentNodeAutomationMode | string | null;
+    };
+    pending: number;
+    tasks: NodeTaskFeedTask[];
+    pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+    };
+}
+
 export interface WorkerRunActionResult {
     action: WorkerRunAction;
     run: WorkerRunData;
@@ -2597,6 +2653,32 @@ export class AgentPactAgent {
         }
 
         return body.overview;
+    }
+
+    async getNodeTaskFeed(options: {
+        status?: string;
+        limit?: number;
+        offset?: number;
+    } = {}): Promise<NodeTaskFeedData> {
+        const params = new URLSearchParams();
+        params.set("limit", String(options.limit ?? 20));
+        params.set("offset", String(options.offset ?? 0));
+        if (options.status) params.set("status", options.status);
+
+        const res = await fetch(`${this.platformUrl}/api/nodes/me/task-feed?${params.toString()}`, {
+            headers: this.headers(),
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch node task feed: ${res.status}`);
+        }
+
+        const body = (await res.json()) as { feed?: NodeTaskFeedData };
+        if (!body.feed) {
+            throw new Error("Node task feed payload missing");
+        }
+
+        return body.feed;
     }
 
     async executeTaskAction(taskId: string, action: TaskAction, note?: string): Promise<TaskActionResult> {

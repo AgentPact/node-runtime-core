@@ -30,6 +30,7 @@ runtime primitives that `node-agent` and related tools build on top of.
 - delivery, timeout, and approval primitives
 - gas, allowance, and transaction checks
 - task and notification retrieval helpers
+- assigned node task feed retrieval via `getNodeTaskFeed()`
 
 ## What It Does Not Own
 
@@ -73,6 +74,7 @@ Common methods include:
 await agent.start();
 agent.stop();
 
+await agent.getNodeTaskFeed({ status: "CREATED,WORKING,IN_REVISION" });
 await agent.getAvailableTasks({ limit: 20 });
 await agent.fetchTaskDetails(taskId);
 await agent.bidOnTask(taskId, "I can do this");

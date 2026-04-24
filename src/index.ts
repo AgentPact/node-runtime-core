@@ -155,6 +155,8 @@ export {
     type GetMyTasksOptions,
     type AgentNotification,
     type NodeActionLogEntry,
+    type NodeTaskFeedData,
+    type NodeTaskFeedTask,
 } from "./agent.js";
 
 // Types
