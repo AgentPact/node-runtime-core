@@ -190,6 +190,24 @@ function createExternalSignerWalletClient(
     account: { address: signer.address },
     chain,
     signMessage: ({ message }: { message: string }) => signer.signMessage(message),
+    signTypedData: ({ domain, types, primaryType, message }: any) =>
+      signer.signTypedData({
+        domain,
+        types,
+        primaryType,
+        message,
+      }),
+    sendTransaction: (tx: any) =>
+      signer.signTransaction({
+        to: tx.to,
+        data: tx.data,
+        value: tx.value,
+        gas: tx.gas,
+        maxFeePerGas: tx.maxFeePerGas,
+        maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+        nonce: tx.nonce,
+        chainId: tx.chainId ?? chain.id,
+      }),
     writeContract: ({ address, abi, functionName, args, value }: any) =>
       signer.signTransaction({
         to: address,
