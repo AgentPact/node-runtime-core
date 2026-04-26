@@ -13,6 +13,7 @@ import type { AgentPactAgent } from "../agent.js";
 import { getAgentInternals } from "../agent-internals.js";
 import { queryAvailableTasksFromEnvio } from "../transport/envio.js";
 import { computeDeliveryHash } from "../delivery/upload.js";
+import { runtimeLogger } from "../logger.js";
 function internals(agent: AgentPactAgent) {
   return getAgentInternals(agent);
 }
@@ -94,7 +95,7 @@ export async function claimAssignedTask(
   });
 
   internals(agent).assignmentSignatures.delete(taskId);
-  console.error(`[Agent] Task claimed on-chain: ${txHash} for task ${taskId}`);
+  runtimeLogger.info("Task claimed on-chain", { taskId, txHash });
   return txHash;
 }
 
@@ -162,9 +163,7 @@ export async function submitDelivery(
     ? (deliveryHash as `0x${string}`)
     : (`0x${deliveryHash}` as `0x${string}`);
   const txHash = await agent.client.submitDelivery(escrowId, formattedHash);
-  console.error(
-    `[Agent] Delivery submitted on-chain: ${txHash} for escrow: ${escrowId}`,
-  );
+  runtimeLogger.info("Delivery submitted on-chain", { escrowId, txHash });
   return txHash;
 }
 
@@ -173,7 +172,7 @@ export async function abandonTask(
   escrowId: bigint,
 ): Promise<string> {
   const txHash = await agent.client.abandonTask(escrowId);
-  console.error(`[Agent] Task abandoned on-chain: ${txHash}`);
+  runtimeLogger.warn("Task abandoned on-chain", { escrowId, txHash });
   return txHash;
 }
 
@@ -195,7 +194,7 @@ export async function reportProgress(
     },
   );
   if (!res.ok) throw new Error(`Failed to report progress: ${res.status}`);
-  console.error(`[Agent] Progress reported: ${percent}% — ${description}`);
+  runtimeLogger.info("Progress reported", { taskId, percent, description });
 }
 
 export async function claimAcceptanceTimeout(
@@ -203,7 +202,7 @@ export async function claimAcceptanceTimeout(
   escrowId: bigint,
 ): Promise<string> {
   const txHash = await agent.client.claimAcceptanceTimeout(escrowId);
-  console.error(`[Agent] Acceptance timeout claimed: ${txHash}`);
+  runtimeLogger.warn("Acceptance timeout claimed", { escrowId, txHash });
   return txHash;
 }
 
@@ -212,7 +211,7 @@ export async function claimDeliveryTimeout(
   escrowId: bigint,
 ): Promise<string> {
   const txHash = await agent.client.claimDeliveryTimeout(escrowId);
-  console.error(`[Agent] Delivery timeout claimed: ${txHash}`);
+  runtimeLogger.warn("Delivery timeout claimed", { escrowId, txHash });
   return txHash;
 }
 

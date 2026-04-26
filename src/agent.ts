@@ -81,6 +81,7 @@ import { KnowledgeClient } from "./knowledge/knowledgeClient.js";
 import { fetchPlatformConfig } from "./config.js";
 import { queryAvailableTasksFromEnvio } from "./transport/envio.js";
 import { setAgentInternals } from "./agent-internals.js";
+import { runtimeLogger } from "./logger.js";
 import type { ExternalSigner } from "./signer.js";
 import {
   DEFAULT_PLATFORM_URL,
@@ -1237,7 +1238,7 @@ export class AgentPactAgent {
     };
 
     this.assignmentSignatures.set(taskId, assignment);
-    console.error(`[Agent] Assignment signature cached for task ${taskId}`);
+    runtimeLogger.info("Assignment signature cached", { taskId });
   }
 
   /**
@@ -1249,7 +1250,7 @@ export class AgentPactAgent {
     const taskId = String(data.taskId ?? event.taskId ?? "");
 
     if (!taskId) {
-      console.error("[Agent] Missing taskId on ASSIGNMENT_SIGNATURE payload");
+      runtimeLogger.warn("Missing taskId on ASSIGNMENT_SIGNATURE payload");
       return;
     }
 
@@ -1260,20 +1261,21 @@ export class AgentPactAgent {
       platformSignature: data.signature as `0x${string}`,
     };
 
-    console.error(
-      `[Agent] Assignment signature received for escrow ${claimParams.escrowId}`,
-    );
-    console.error(`[Agent] Auto-claiming task on-chain...`);
+    runtimeLogger.info("Assignment signature received", {
+      taskId,
+      escrowId: claimParams.escrowId,
+    });
+    runtimeLogger.info("Auto-claiming task on-chain", { taskId });
 
     // Fire-and-forget: claimTask on-chain, then notify via TASK_CLAIMED event
     this.client
       .claimTask(claimParams)
       .then((txHash: any) => {
         this.assignmentSignatures.delete(taskId);
-        console.error(`[Agent] claimTask() tx: ${txHash}`);
-        console.error(
-          `[Agent] Task claimed. Waiting for confidential materials (TASK_DETAILS)...`,
-        );
+        runtimeLogger.info("Task claimed; waiting for confidential materials", {
+          taskId,
+          txHash,
+        });
 
         // Dispatch internal event so user can track claim success
         this.dispatch("TASK_CLAIMED", {
@@ -1286,7 +1288,7 @@ export class AgentPactAgent {
         });
       })
       .catch((err: any) => {
-        console.error(`[Agent] claimTask() failed:`, err);
+        runtimeLogger.error("claimTask() failed", { taskId, error: err });
         this.dispatch("CLAIM_FAILED", {
           type: "CLAIM_FAILED",
           data: {
@@ -1308,11 +1310,11 @@ export class AgentPactAgent {
           const result = handler(data);
           if (result instanceof Promise) {
             result.catch((err) => {
-              console.error(`[Agent] Async handler error for "${event}":`, err);
+              runtimeLogger.error("Async handler error", { event, error: err });
             });
           }
         } catch (err) {
-          console.error(`[Agent] Handler error for "${event}":`, err);
+          runtimeLogger.error("Handler error", { event, error: err });
         }
       }
     }

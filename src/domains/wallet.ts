@@ -10,6 +10,7 @@ import type {
   PreflightCheckResult,
 } from "../types.js";
 import { formatEther, formatUnits } from "viem";
+import { runtimeLogger } from "../logger.js";
 
 export async function getNativeBalance(agent: AgentPactAgent): Promise<bigint> {
   return agent.client.getNativeBalance(agent.walletAddress);
@@ -83,7 +84,12 @@ export async function approveToken(
   amount?: bigint,
 ): Promise<string> {
   const txHash = await agent.client.approveToken(token, spender, amount);
-  console.error(`[Agent] Token approval submitted on-chain: ${txHash}`);
+  runtimeLogger.info("Token approval submitted on-chain", {
+    token,
+    spender,
+    amount,
+    txHash,
+  });
   return txHash;
 }
 
