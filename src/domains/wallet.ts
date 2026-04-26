@@ -127,25 +127,39 @@ export async function preflightCheck(
 
   // ── Round 1: chainId + wallet + gasQuote in parallel ──
   const gasQuotePromise = params.action
-    ? agent.getGasQuote({
-        action: params.action,
-        tokenAddress: params.tokenAddress,
-        spender: params.spender,
-        requiredAmount: undefined,
-        amount: params.requiredAmount,
-        escrowId: params.escrowId,
-        deliveryHash: params.deliveryHash,
-      } as GasQuoteRequest & { requiredAmount?: bigint })
-    : Promise.resolve(undefined);
+    ? agent
+        .getGasQuote({
+          action: params.action,
+          tokenAddress: params.tokenAddress,
+          spender: params.spender,
+          requiredAmount: undefined,
+          amount: params.requiredAmount,
+          escrowId: params.escrowId,
+          deliveryHash: params.deliveryHash,
+        } as GasQuoteRequest & { requiredAmount?: bigint })
+        .then((gasQuote) => ({ gasQuote, gasQuoteError: undefined }))
+        .catch((error) => ({
+          gasQuote: undefined,
+          gasQuoteError: error instanceof Error ? error.message : String(error),
+        }))
+    : Promise.resolve({ gasQuote: undefined, gasQuoteError: undefined });
 
-  const [chainId, wallet, gasQuote] = await Promise.all([
+  const [chainId, wallet, gasQuoteResult] = await Promise.all([
     agent.client.getChainId(),
     agent.getWalletOverview(),
     gasQuotePromise,
   ]);
+  const gasQuote = gasQuoteResult.gasQuote;
+  const gasQuoteError = gasQuoteResult.gasQuoteError;
 
   if (!params.action) {
     notes.push("No action-specific gas quote requested.");
+  } else if (gasQuoteError) {
+    if (params.action === "claim_task") {
+      notes.push(`Gas quote is not available for claim_task yet: ${gasQuoteError}`);
+    } else {
+      blockingReasons.push(`Unable to estimate gas for ${params.action}: ${gasQuoteError}`);
+    }
   }
 
   const chainOk = chainId === agent.platformConfig.chainId;
