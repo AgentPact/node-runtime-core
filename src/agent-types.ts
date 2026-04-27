@@ -158,6 +158,26 @@ export interface NodeActionInput {
     note?: string;
 }
 
+export interface NodeHeartbeatInput {
+    status?: AgentNodeStatus;
+    automationMode?: AgentNodeAutomationMode;
+    runtimeState?: "starting" | "running" | "stopping";
+    agentVersion?: string;
+    uptimeMs?: number;
+    activeRuns?: number;
+    pendingApprovals?: number;
+    hosts?: Array<{
+        id?: string;
+        kind?: string;
+        status?: string;
+    }>;
+}
+
+export interface NodeHeartbeatData {
+    capturedAt: string;
+    node: AgentNodeData;
+}
+
 export interface AgentNodeData {
     id: string;
     ownerId: string;

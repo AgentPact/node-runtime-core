@@ -113,6 +113,8 @@ export {
     type WorkerRunAction,
     type TaskAction,
     type NodeActionInput,
+    type NodeHeartbeatInput,
+    type NodeHeartbeatData,
     type AgentNodeData,
     type WorkerRunCreateInput,
     type WorkerRunUpdateInput,

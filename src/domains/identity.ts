@@ -5,6 +5,8 @@ import type {
   AgentNodeRegistrationData,
   AgentNodeUpdate,
   NodeActionInput,
+  NodeHeartbeatData,
+  NodeHeartbeatInput,
   AgentNodeData,
   CurrentUserData,
   NodeActionLogEntry,
@@ -265,6 +267,37 @@ export async function executeNodeAction(
   }
 
   return body.node;
+}
+
+export async function heartbeatNode(
+  agent: AgentPactAgent,
+  input: NodeHeartbeatInput = {},
+): Promise<NodeHeartbeatData> {
+  const res = await fetch(
+    `${internals(agent).platformUrl}/api/nodes/me/heartbeat`,
+    {
+      method: "POST",
+      headers: internals(agent).headers(),
+      body: JSON.stringify(input),
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to send node heartbeat: ${res.status}`);
+  }
+
+  const body = (await res.json()) as {
+    capturedAt?: string;
+    node?: AgentNodeData;
+  };
+  if (!body.capturedAt || !body.node) {
+    throw new Error("Node heartbeat payload missing");
+  }
+
+  return {
+    capturedAt: body.capturedAt,
+    node: body.node,
+  };
 }
 
 export async function getNodeOpsOverview(

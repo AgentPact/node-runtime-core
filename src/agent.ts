@@ -122,6 +122,8 @@ import type {
   WorkerRunAction,
   TaskAction,
   NodeActionInput,
+  NodeHeartbeatData,
+  NodeHeartbeatInput,
   AgentNodeData,
   WorkerRunCreateInput,
   WorkerRunUpdateInput,
@@ -1005,6 +1007,12 @@ export class AgentPactAgent {
 
   async executeNodeAction(input: NodeActionInput): Promise<AgentNodeData> {
     return IdentityDomain.executeNodeAction(this, input);
+  }
+
+  async heartbeatNode(
+    input: NodeHeartbeatInput = {},
+  ): Promise<NodeHeartbeatData> {
+    return IdentityDomain.heartbeatNode(this, input);
   }
 
   async getNodeWorkerRuns(
