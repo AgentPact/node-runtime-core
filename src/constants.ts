@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @agentpactai/runtime - Chain & contract constants
  *
  * SECURITY: Critical contract addresses are hardcoded here to prevent
@@ -90,6 +90,7 @@ export const TASK_ASSIGNMENT_TYPES = {
     TaskAssignment: [
         { name: "escrowId", type: "uint256" },
         { name: "agent", type: "address" },
+        { name: "payout", type: "address" },
         { name: "nonce", type: "uint256" },
         { name: "expiredAt", type: "uint256" },
     ],

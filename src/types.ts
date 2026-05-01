@@ -62,6 +62,7 @@ export interface EscrowRecord {
     /** On-chain decline count (task suspends at 3) */
     declineCount: number;
     acceptanceWindowHours: number;
+    payoutAddress: `0x${string}`;
     /** Fund weights for criteria settlement (fetched separately) */
     fundWeights?: number[];
 }
@@ -94,6 +95,7 @@ export interface RequestRevisionParams {
 /** Parameters for claiming a task */
 export interface ClaimTaskParams {
     escrowId: bigint;
+    payoutAddress: `0x${string}`;
     nonce: bigint;
     expiredAt: bigint;
     platformSignature: `0x${string}`;
@@ -103,6 +105,7 @@ export interface ClaimTaskParams {
 export interface TaskAssignmentData {
     escrowId: bigint;
     agent: `0x${string}`;
+    payout: `0x${string}`;
     nonce: bigint;
     expiredAt: bigint;
 }

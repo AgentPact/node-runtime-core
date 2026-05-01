@@ -49,6 +49,7 @@ export async function signTaskAssignment(
         message: {
             escrowId: data.escrowId,
             agent: data.agent,
+            payout: data.payout,
             nonce: data.nonce,
             expiredAt: data.expiredAt,
         },
@@ -72,6 +73,7 @@ export async function createSignedAssignment(
     config: ChainConfig,
     escrowId: bigint,
     agent: `0x${string}`,
+    payout: `0x${string}`,
     nonce: bigint,
     expiryMinutes: number = 30
 ) {
@@ -80,11 +82,12 @@ export async function createSignedAssignment(
     const signature = await signTaskAssignment(walletClient, config, {
         escrowId,
         agent,
+        payout,
         nonce,
         expiredAt,
     });
 
-    return { escrowId, agent, nonce, expiredAt, signature };
+    return { escrowId, agent, payout, nonce, expiredAt, signature };
 }
 
 // ─── ExternalSigner — Private Key Isolation ──────────────────────────────────
