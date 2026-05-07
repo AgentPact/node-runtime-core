@@ -65,6 +65,8 @@ export async function claimAssignedTask(
       data?: {
         taskId: string;
         escrowId: string;
+        payout?: string;
+        payoutAddress?: string;
         nonce: string;
         expiredAt: string;
         signature: string;
@@ -80,6 +82,7 @@ export async function claimAssignedTask(
     assignment = {
       taskId: body.data.taskId,
       escrowId: BigInt(body.data.escrowId),
+      payoutAddress: (body.data.payoutAddress ?? body.data.payout) as `0x${string}`,
       nonce: BigInt(body.data.nonce),
       expiredAt: BigInt(body.data.expiredAt),
       signature: body.data.signature as `0x${string}`,
@@ -89,6 +92,7 @@ export async function claimAssignedTask(
 
   const txHash = await agent.client.claimTask({
     escrowId: assignment.escrowId,
+    payoutAddress: assignment.payoutAddress,
     nonce: assignment.nonce,
     expiredAt: assignment.expiredAt,
     platformSignature: assignment.signature,

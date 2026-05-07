@@ -359,6 +359,7 @@ export class AgentPactClient {
             functionName: "claimTask",
             args: [
                 params.escrowId,
+                params.payoutAddress,
                 params.nonce,
                 params.expiredAt,
                 params.platformSignature,

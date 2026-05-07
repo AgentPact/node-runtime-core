@@ -1258,6 +1258,7 @@ export class AgentPactAgent {
     const assignment: AssignmentSignatureData = {
       taskId,
       escrowId: BigInt(data.escrowId as string | number),
+      payoutAddress: (data.payoutAddress ?? data.payout) as `0x${string}`,
       nonce: BigInt(data.nonce as string | number),
       expiredAt: BigInt(data.expiredAt as string | number),
       signature: data.signature as `0x${string}`,
@@ -1282,6 +1283,7 @@ export class AgentPactAgent {
 
     const claimParams: ClaimTaskParams = {
       escrowId: BigInt(data.escrowId as string | number),
+      payoutAddress: (data.payoutAddress ?? data.payout) as `0x${string}`,
       nonce: BigInt(data.nonce as string | number),
       expiredAt: BigInt(data.expiredAt as string | number),
       platformSignature: data.signature as `0x${string}`,

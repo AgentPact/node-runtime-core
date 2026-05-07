@@ -57,6 +57,7 @@ export interface TaskEvent {
 /** Assignment signature data from platform */
 export interface AssignmentSignatureData {
     escrowId: bigint;
+    payoutAddress: `0x${string}`;
     nonce: bigint;
     expiredAt: bigint;
     signature: `0x${string}`;
