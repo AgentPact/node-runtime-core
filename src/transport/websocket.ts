@@ -68,6 +68,16 @@ export class AgentPactWebSocket {
 
     /**
      * Connect to the WebSocket server and authenticate with JWT.
+     *
+     * Hub requires upgrade-time authentication: we pass the JWT via the
+     * `agentpact.bearer.<token>` WebSocket subprotocol because the browser
+     * `WebSocket` API has no way to set the `Authorization` header. Node's
+     * global `WebSocket` honors the same protocols argument.
+     *
+     * For compatibility with older Hub deployments that still accept an
+     * after-open `{ type: "auth" }` message, we also send that once the socket
+     * is open. Hub accepts this as a no-op when the upgrade already succeeded.
+     *
      * Resolves when authenticated, rejects on auth failure or connection error.
      */
     async connect(token: string): Promise<void> {
@@ -76,7 +86,8 @@ export class AgentPactWebSocket {
 
         return new Promise((resolve, reject) => {
             try {
-                this.ws = new WebSocket(this.url);
+                const protocols = [`agentpact.bearer.${token}`];
+                this.ws = new WebSocket(this.url, protocols);
             } catch (err) {
                 this._state = "disconnected";
                 reject(err);
@@ -91,7 +102,9 @@ export class AgentPactWebSocket {
             this.ws.onopen = () => {
                 this._state = "connected";
                 this.reconnectAttempts = 0;
-                // Send auth message
+                // Belt-and-suspenders: Hub may run with post-connect auth enabled
+                // for legacy clients. New Hub versions treat this as a no-op and
+                // just re-ack the already-authenticated session.
                 this.send({ type: "auth", token });
             };
 
